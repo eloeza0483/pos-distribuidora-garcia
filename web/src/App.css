@@ -7,8 +7,8 @@
 .app-header {
   display: flex;
   align-items: center;
-  gap: 2rem;
-  padding: 0 1.5rem;
+  gap: 1rem;
+  padding: 0 1rem;
   height: 56px;
   background: var(--color-primary);
   color: #fff;
@@ -16,6 +16,7 @@
 }
 
 .app-brand {
+  flex-shrink: 0;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -24,9 +25,16 @@
   display: flex;
   gap: 0.25rem;
   margin-right: auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.app-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .btn-tema {
+  flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
@@ -43,6 +51,7 @@
 }
 
 .app-nav-link {
+  flex-shrink: 0;
   color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
   padding: 0.4rem 0.85rem;
