@@ -1,4 +1,14 @@
-import { createSale, PriceMismatchError, MissingBaseQtyError, ProductNotFoundError } from '../services/sales.js'
+import {
+  createSale, getSale, listSales, cashCut, cancelSale,
+  PriceMismatchError, MissingBaseQtyError, ProductNotFoundError, CashTooLowError,
+  SaleNotFoundError, SaleAlreadyCancelledError
+} from '../services/sales.js'
+
+const idParams = {
+  type: 'object',
+  required: ['id'],
+  properties: { id: { type: 'integer' } }
+}
 
 export default async function salesRoutes(fastify) {
   fastify.post('/', {
@@ -21,8 +31,68 @@ export default async function salesRoutes(fastify) {
       if (err instanceof MissingBaseQtyError) {
         return reply.code(422).send({ error: 'missing_base_qty', message: err.message })
       }
+      if (err instanceof CashTooLowError) {
+        return reply.code(422).send({ error: 'cash_too_low', message: err.message })
+      }
       if (err instanceof PriceMismatchError) {
         return reply.code(409).send({ error: 'price_mismatch', message: err.message, details: err.details })
+      }
+      throw err
+    }
+  })
+
+  // OJO: '/corte' va declarada ANTES que '/:id', o Fastify la tomaría como
+  // un id y reventaría la validación del parámetro entero.
+  fastify.get('/corte', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: { date: { type: 'string', format: 'date' } }
+      },
+      response: { 200: { $ref: 'cashCut#' } }
+    }
+  }, async (req) => cashCut(fastify, req.query))
+
+  fastify.get('/', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          from: { type: 'string', format: 'date' },
+          to: { type: 'string', format: 'date' },
+          payment_method: { type: 'string' },
+          q: { type: 'string' },
+          limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 },
+          offset: { type: 'integer', minimum: 0, default: 0 }
+        }
+      },
+      response: { 200: { type: 'array', items: { $ref: 'saleListItem#' } } }
+    }
+  }, async (req) => listSales(fastify, req.query))
+
+  fastify.get('/:id', {
+    schema: { params: idParams, response: { 200: { $ref: 'saleDetail#' } } }
+  }, async (req, reply) => {
+    const sale = await getSale(fastify, req.params.id)
+    if (!sale) return reply.code(404).send({ error: 'not_found', message: 'La venta no existe.' })
+    return sale
+  })
+
+  fastify.post('/:id/cancel', {
+    schema: {
+      params: idParams,
+      body: { $ref: 'cancelSaleBody#' },
+      response: { 200: { type: 'object', properties: { order_id: { type: 'integer' }, status: { type: 'string' }, ticket: { $ref: 'ticket#' } } } }
+    }
+  }, async (req, reply) => {
+    try {
+      return await cancelSale(fastify, req.params.id, req.body ?? {})
+    } catch (err) {
+      if (err instanceof SaleNotFoundError) {
+        return reply.code(404).send({ error: 'not_found', message: err.message })
+      }
+      if (err instanceof SaleAlreadyCancelledError) {
+        return reply.code(409).send({ error: 'already_cancelled', message: err.message })
       }
       throw err
     }

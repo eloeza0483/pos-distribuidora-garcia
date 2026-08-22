@@ -1,0 +1,104 @@
+:root {
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-border: #e2e5ea;
+  --color-text: #1c2230;
+  --color-text-muted: #6b7280;
+
+  --color-primary: #2454a6;
+  --color-primary-dark: #1a3f80;
+  --color-primary-soft: #e8eefb;
+
+  --color-accent: #e08a2c;
+  --color-accent-soft: #fbeedd;
+
+  --color-danger: #c0392b;
+  --color-danger-soft: #fbeae7;
+  --color-success: #2f8f5b;
+  --color-success-soft: #e6f4ec;
+
+  --radius: 10px;
+  --shadow-sm: 0 1px 2px rgba(20, 30, 60, 0.06);
+  --shadow-md: 0 4px 16px rgba(20, 30, 60, 0.08);
+
+  color-scheme: light;
+}
+
+/* Oscuro automático: el sistema lo pide y no hay override manual a claro. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #12151c;
+    --color-surface: #1b1f29;
+    --color-border: #2a2f3b;
+    --color-text: #e7e9ee;
+    --color-text-muted: #9aa1b1;
+
+    --color-primary: #4d7fd1;
+    --color-primary-dark: #7ea3e0;
+    --color-primary-soft: #1e2d47;
+
+    --color-accent: #e8a25a;
+    --color-accent-soft: #3a2c18;
+
+    --color-danger: #e0685a;
+    --color-danger-soft: #3a201d;
+    --color-success: #4fb17d;
+    --color-success-soft: #17301f;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+    color-scheme: dark;
+  }
+}
+
+/* Oscuro forzado a mano, sin importar lo que pida el sistema. */
+:root[data-theme="dark"] {
+  --color-bg: #12151c;
+  --color-surface: #1b1f29;
+  --color-border: #2a2f3b;
+  --color-text: #e7e9ee;
+  --color-text-muted: #9aa1b1;
+
+  --color-primary: #4d7fd1;
+  --color-primary-dark: #7ea3e0;
+  --color-primary-soft: #1e2d47;
+
+  --color-accent: #e8a25a;
+  --color-accent-soft: #3a2c18;
+
+  --color-danger: #e0685a;
+  --color-danger-soft: #3a201d;
+  --color-success: #4fb17d;
+  --color-success-soft: #17301f;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+button {
+  font-family: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+}

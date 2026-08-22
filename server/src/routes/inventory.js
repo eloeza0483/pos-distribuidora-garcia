@@ -1,6 +1,7 @@
 import {
-  createMovement, listMovements,
-  MissingBaseQtyError, UnitNotFoundError, ProductNotFoundError, NegativeStockError
+  createMovement, listMovements, revertMovement,
+  MissingBaseQtyError, UnitNotFoundError, ProductNotFoundError, NegativeStockError,
+  MovementNotFoundError, MovementNotRevertibleError
 } from '../services/inventory.js'
 
 export default async function inventoryRoutes(fastify) {
@@ -23,6 +24,33 @@ export default async function inventoryRoutes(fastify) {
       }
       if (err instanceof MissingBaseQtyError) {
         return reply.code(422).send({ error: 'missing_base_qty', message: err.message })
+      }
+      if (err instanceof NegativeStockError) {
+        return reply.code(409).send({ error: 'insufficient_stock', message: err.message })
+      }
+      throw err
+    }
+  })
+
+  fastify.post('/movements/:id/revert', {
+    schema: {
+      params: { type: 'object', required: ['id'], properties: { id: { type: 'integer' } } },
+      response: { 201: { $ref: 'movement#' } }
+    }
+  }, async (req, reply) => {
+    try {
+      const movement = await revertMovement(fastify, req.params.id)
+      reply.code(201)
+      return movement
+    } catch (err) {
+      if (err instanceof MovementNotFoundError) {
+        return reply.code(404).send({ error: 'not_found', message: err.message })
+      }
+      if (err instanceof ProductNotFoundError) {
+        return reply.code(404).send({ error: 'not_found', message: err.message })
+      }
+      if (err instanceof MovementNotRevertibleError) {
+        return reply.code(409).send({ error: 'not_revertible', message: err.message })
       }
       if (err instanceof NegativeStockError) {
         return reply.code(409).send({ error: 'insufficient_stock', message: err.message })

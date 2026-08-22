@@ -32,6 +32,10 @@ export const productSchema = {
     stock_base: { type: 'number' },
     min_stock_base: { type: ['number', 'null'] },
     low_stock: { type: 'boolean' },
+    // Ruta relativa dentro de /uploads (null si el producto no tiene foto).
+    image_path: { type: ['string', 'null'] },
+    category_id: { type: ['integer', 'null'] },
+    category_name: { type: ['string', 'null'] },
     units: { type: 'array', items: { $ref: 'unit#' } }
   }
 }
@@ -54,7 +58,8 @@ export const createProductBodySchema = {
     unit_label: { type: 'string', minLength: 1, maxLength: 30, default: 'pieza' },
     price: { type: 'number', exclusiveMinimum: 0 },
     base_qty: { type: 'number', exclusiveMinimum: 0, default: 1 },
-    barcode: { type: 'string', maxLength: 64 }
+    barcode: { type: 'string', maxLength: 64 },
+    category_id: { type: 'integer' }
   }
 }
 
@@ -70,7 +75,8 @@ export const patchProductBodySchema = {
     sat_unit_code: { type: 'string', maxLength: 10 },
     is_taxable: { type: 'boolean' },
     has_variable_weight: { type: 'boolean' },
-    min_stock_base: { type: ['number', 'null'], minimum: 0 }
+    min_stock_base: { type: ['number', 'null'], minimum: 0 },
+    category_id: { type: ['integer', 'null'] }
   }
 }
 

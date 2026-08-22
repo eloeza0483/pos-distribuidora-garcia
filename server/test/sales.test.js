@@ -52,8 +52,44 @@ describe('cobro de mostrador', () => {
     expect(first.statusCode).toBe(201)
     expect(second.statusCode).toBe(200)
     expect(second.json().order_id).toBe(first.json().order_id)
+    // El reintento reimprime en lugar de quedarse sin ticket.
+    expect(second.json().ticket.folio).toBe(first.json().ticket.folio)
 
     const { rows } = await app.pg.query('SELECT count(*) FROM orders WHERE id = $1', [first.json().order_id])
     expect(Number(rows[0].count)).toBe(1)
+  })
+
+  it('cobra en efectivo, calcula el cambio y arma el ticket', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/sales',
+      headers: { 'idempotency-key': randomUUID() },
+      payload: { items: [{ product_id: productId, quantity: 2, unit_price: 10 }], payment_method: 'efectivo', cash_received: 25 }
+    })
+
+    expect(res.statusCode).toBe(201)
+    const body = res.json()
+    expect(body.ticket.folio).toBe(body.order_id)
+    expect(body.ticket.total).toBe(20)
+    expect(body.ticket.payment_method).toBe('efectivo')
+    expect(body.ticket.cash_received).toBe(25)
+    expect(body.ticket.change_given).toBe(5)
+    expect(body.ticket.cliente).toBe('Público en General')
+    expect(body.ticket.cancelado).toBe(false)
+
+    const { rows } = await app.pg.query('SELECT client_id FROM orders WHERE id = $1', [body.order_id])
+    expect(rows[0].client_id).not.toBeNull()
+  })
+
+  it('rechaza el cobro en efectivo si no alcanza (422)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/sales',
+      headers: { 'idempotency-key': randomUUID() },
+      payload: { items: [{ product_id: productId, quantity: 2, unit_price: 10 }], payment_method: 'efectivo', cash_received: 5 }
+    })
+
+    expect(res.statusCode).toBe(422)
+    expect(res.json().error).toBe('cash_too_low')
   })
 })

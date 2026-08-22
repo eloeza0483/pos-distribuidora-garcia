@@ -13,6 +13,10 @@ export const movementSchema = {
     stock_after: { type: 'number' },
     reason: { type: ['string', 'null'] },
     order_id: { type: ['integer', 'null'] },
+    // Apunta al movimiento que este renglón corrige (si es una reversa).
+    reverted_movement_id: { type: ['integer', 'null'] },
+    // true si ALGÚN otro movimiento ya deshizo a este.
+    is_reverted: { type: 'boolean' },
     created_at: { type: 'string' }
   }
 }
