@@ -54,7 +54,7 @@ export default function App() {
       <ProveedorConfirmacion>
         <div className="app-shell">
           <header className="app-header">
-            <span className="app-brand">Distribuidora García</span>
+            <span className="app-brand"> Distribuidora García</span>
             <nav className="app-nav">
               {navItems.map((item) => (
                 <NavLink
@@ -62,7 +62,7 @@ export default function App() {
                   to={item.to}
                   className={({ isActive }) => 'app-nav-link' + (isActive ? ' active' : '')}
                 >
-                  {item.label}
+                  {item.label }
                 </NavLink>
               ))}
             </nav>
