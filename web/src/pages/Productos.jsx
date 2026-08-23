@@ -5,6 +5,11 @@ import { useConfirmacion } from '../components/Confirmacion.jsx'
 import { dinero, piezas, preguntaPiezasQueTrae } from '../lib/formato.js'
 import SelectorPresentacion from '../components/SelectorPresentacion.jsx'
 import SelectorCategoria from '../components/SelectorCategoria.jsx'
+import {
+  CLASE_CARD, CLASE_PAGE_TITLE, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE,
+  CLASE_AYUDA, CLASE_BTN_PRIMARY, CLASE_BTN_GHOST, CLASE_SECCION_TITULO,
+  CLASE_PILL_LOW, CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_BTN_ACCENT
+} from '../lib/clasesUi.js'
 
 const productoVacio = { product_name: '', price: '', unit_label: 'pieza', barcode: '', category_id: null }
 const unidadVacia = { unit_label: '', price: '', base_qty: '', barcode: '' }
@@ -266,38 +271,38 @@ export default function Productos() {
 
   return (
     <div>
-      <h1 className="page-title">Productos</h1>
+      <h1 className={CLASE_PAGE_TITLE}>Productos</h1>
 
-      {error && <div className="error-banner">{error}</div>}
-      {aviso && <div className="card" style={{ marginBottom: '1rem', borderColor: 'var(--color-success)' }}>{aviso}</div>}
+      {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
+      {aviso && <div className={`${CLASE_CARD} mb-4 border-success`}>{aviso}</div>}
 
-      <form onSubmit={alBuscar} className="card" style={{ marginBottom: '1.25rem', display: 'flex', gap: '0.6rem' }}>
+      <form onSubmit={alBuscar} className={`${CLASE_CARD} mb-5 flex gap-[0.6rem]`}>
         <input
           type="search"
           placeholder="Buscar por nombre, código de barras o precio…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          style={{ flex: 1 }}
+          className="flex-1"
         />
         <select
           value={filtroCategoria}
           onChange={(e) => alCambiarFiltroCategoria(e.target.value)}
-          style={{ maxWidth: 200 }}
+          className="max-w-[200px]"
         >
           <option value="">Todas las categorías</option>
           {categorias.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
-        <button type="submit" className="btn btn-ghost">Buscar</button>
+        <button type="submit" className={CLASE_BTN_GHOST}>Buscar</button>
       </form>
 
-      <details className="card" style={{ marginBottom: '1.25rem' }}>
-        <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--color-primary-dark)' }}>
+      <details className={`${CLASE_CARD} mb-5`}>
+        <summary className="cursor-pointer font-semibold text-primary-dark">
           Dar de alta un producto nuevo
         </summary>
-        <form onSubmit={crearProducto} style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', alignItems: 'start' }}>
-          <label className="field">
+        <form onSubmit={crearProducto} className="mt-4 grid grid-cols-5 gap-3 items-start">
+          <label className={CLASE_FIELD}>
             Nombre
             <input
               type="text"
@@ -306,7 +311,7 @@ export default function Productos() {
               onChange={(e) => setNuevoProducto((p) => ({ ...p, product_name: e.target.value }))}
             />
           </label>
-          <label className="field">
+          <label className={CLASE_FIELD}>
             Precio por pieza
             <input
               type="number"
@@ -317,14 +322,14 @@ export default function Productos() {
               onChange={(e) => setNuevoProducto((p) => ({ ...p, price: e.target.value }))}
             />
           </label>
-          <label className="field">
+          <label className={CLASE_FIELD}>
             ¿Cómo se vende suelto?
             <SelectorPresentacion
               value={nuevoProducto.unit_label}
               onChange={(valor) => setNuevoProducto((p) => ({ ...p, unit_label: valor }))}
             />
           </label>
-          <label className="field">
+          <label className={CLASE_FIELD}>
             Categoría
             <SelectorCategoria
               categorias={categorias}
@@ -333,7 +338,7 @@ export default function Productos() {
               onCrear={crearCategoria}
             />
           </label>
-          <label className="field">
+          <label className={CLASE_FIELD}>
             Código de barras (opcional)
             <input
               type="text"
@@ -341,24 +346,24 @@ export default function Productos() {
               onChange={(e) => setNuevoProducto((p) => ({ ...p, barcode: e.target.value }))}
             />
           </label>
-          <button type="submit" className="btn btn-primary" disabled={creando} style={{ gridColumn: '1 / -1', justifySelf: 'start' }}>
+          <button type="submit" className={`${CLASE_BTN_PRIMARY} col-span-full justify-self-start`} disabled={creando}>
             {creando ? 'Guardando…' : 'Dar de alta'}
           </button>
         </form>
-        <p className="ayuda">
+        <p className={CLASE_AYUDA}>
           Después puedes agregarle presentaciones más grandes (bulto, caja) desde el botón «Presentaciones».
         </p>
       </details>
 
-      <div className="card">
+      <div className={CLASE_CARD}>
         {cargando ? (
-          <div className="empty-state">Cargando…</div>
+          <div className={CLASE_EMPTY_STATE}>Cargando…</div>
         ) : productos.length === 0 ? (
-          <div className="empty-state">Ningún producto coincide con esa búsqueda.</div>
+          <div className={CLASE_EMPTY_STATE}>Ningún producto coincide con esa búsqueda.</div>
         ) : (
           grupos.map((grupo) => (
-            <div key={grupo.nombre} style={{ marginBottom: '1.5rem' }}>
-              <p className="seccion-titulo">{grupo.nombre} · {grupo.productos.length}</p>
+            <div key={grupo.nombre} className="mb-6">
+              <p className={CLASE_SECCION_TITULO}>{grupo.nombre} · {grupo.productos.length}</p>
               <table>
                 <thead>
                   <tr>
@@ -374,16 +379,16 @@ export default function Productos() {
                   {grupo.productos.map((p) => (
                     <Fragment key={p.id}>
                       <tr>
-                        <td style={{ width: 60 }}>
+                        <td className="w-[60px]">
                           <ControlFoto producto={p} onSubir={subirFoto} onQuitar={quitarFoto} />
                         </td>
                         <td>{p.product_name}</td>
                         <td>{dinero(p.list_price)}</td>
                         <td>
                           {piezas(p.stock_base)}
-                          {p.low_stock && <span className="pill pill-low" style={{ marginLeft: '0.5rem' }}>bajo</span>}
+                          {p.low_stock && <span className={`${CLASE_PILL_LOW} ml-2`}>bajo</span>}
                         </td>
-                        <td style={{ minWidth: 160 }}>
+                        <td className="min-w-[160px]">
                           <SelectorCategoria
                             categorias={categorias}
                             value={p.category_id}
@@ -392,14 +397,14 @@ export default function Productos() {
                           />
                         </td>
                         <td>
-                          <button className="btn btn-ghost" onClick={() => setExpandido(expandido === p.id ? null : p.id)}>
+                          <button className={CLASE_BTN_GHOST} onClick={() => setExpandido(expandido === p.id ? null : p.id)}>
                             {expandido === p.id ? 'Ocultar' : 'Presentaciones'}
                           </button>
                         </td>
                       </tr>
                       {expandido === p.id && (
                         <tr>
-                          <td colSpan={6} style={{ background: 'var(--color-bg)' }}>
+                          <td colSpan={6} className="bg-bg">
                             <table>
                               <thead>
                                 <tr>
@@ -452,20 +457,20 @@ export default function Productos() {
                               </tbody>
                             </table>
 
-                            <p className="ayuda" style={{ marginTop: '0.9rem' }}>
+                            <p className={`${CLASE_AYUDA} mt-[0.9rem]`}>
                               Una presentación es cómo viene empaquetado el producto. Si un bulto trae 50 piezas,
                               escribe 50 en «Piezas que trae»: con eso el sistema sabe cuánto descontar del inventario.
                             </p>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '0.6rem', marginTop: '0.5rem', alignItems: 'start' }}>
-                              <label className="field">
+                            <div className="grid grid-cols-[repeat(4,1fr)_auto] gap-[0.6rem] mt-2 items-start">
+                              <label className={CLASE_FIELD}>
                                 Nueva presentación
                                 <SelectorPresentacion
                                   value={formularioUnidad(p.id).unit_label}
                                   onChange={(valor) => actualizarFormularioUnidad(p.id, 'unit_label', valor)}
                                 />
                               </label>
-                              <label className="field">
+                              <label className={CLASE_FIELD}>
                                 Precio
                                 <input
                                   type="number"
@@ -475,7 +480,7 @@ export default function Productos() {
                                   onChange={(e) => actualizarFormularioUnidad(p.id, 'price', e.target.value)}
                                 />
                               </label>
-                              <label className="field">
+                              <label className={CLASE_FIELD}>
                                 Piezas que trae
                                 <input
                                   type="number"
@@ -485,7 +490,7 @@ export default function Productos() {
                                   onChange={(e) => actualizarFormularioUnidad(p.id, 'base_qty', e.target.value)}
                                 />
                               </label>
-                              <label className="field">
+                              <label className={CLASE_FIELD}>
                                 Código de barras
                                 <input
                                   type="text"
@@ -493,7 +498,7 @@ export default function Productos() {
                                   onChange={(e) => actualizarFormularioUnidad(p.id, 'barcode', e.target.value)}
                                 />
                               </label>
-                              <button className="btn btn-accent" onClick={() => agregarUnidad(p)}>Agregar</button>
+                              <button className={CLASE_BTN_ACCENT} onClick={() => agregarUnidad(p)}>Agregar</button>
                             </div>
                           </td>
                         </tr>
@@ -515,24 +520,23 @@ function ControlFoto({ producto, onSubir, onQuitar }) {
   const url = urlDeImagen(producto.image_path)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'center' }}>
+    <div className="flex flex-col gap-1 items-center">
       {url
-        ? <img className="foto" src={url} alt={producto.product_name} />
-        : <div className="foto-vacia" aria-hidden="true">📦</div>}
+        ? <img className={CLASE_FOTO} src={url} alt={producto.product_name} />
+        : <div className={CLASE_FOTO_VACIA} aria-hidden="true">📦</div>}
 
       <input
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
-        style={{ display: 'none' }}
+        className="hidden"
         onChange={(e) => {
           onSubir(producto, e.target.files?.[0])
           e.target.value = ''
         }}
       />
       <button
-        className="btn btn-ghost"
-        style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem' }}
+        className={`${CLASE_BTN_GHOST} py-[0.15rem] px-[0.4rem] text-[0.7rem]`}
         onClick={() => (url ? onQuitar(producto) : inputRef.current?.click())}
         title={url ? 'Quitar la foto' : 'Subir una foto'}
       >

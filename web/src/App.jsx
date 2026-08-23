@@ -6,7 +6,6 @@ import Productos from './pages/Productos.jsx'
 import Ventas from './pages/Ventas.jsx'
 import { ProveedorConfirmacion } from './components/Confirmacion.jsx'
 import { obtenerTemaGuardado, aplicarTema } from './lib/tema.js'
-import './App.css'
 
 const navItems = [
   { to: '/mostrador', label: 'Mostrador' },
@@ -39,7 +38,7 @@ function BotonTema() {
 
   return (
     <button
-      className="btn-tema"
+      className="flex-shrink-0 rounded-full border border-white/35 bg-white/10 text-white px-3 py-[0.35rem] text-[0.82rem] font-medium cursor-pointer transition-colors duration-150 hover:bg-white/20"
       onClick={siguiente}
       title={`Tema: ${actual.etiqueta} (clic para cambiar)`}
     >
@@ -52,15 +51,18 @@ export default function App() {
   return (
     <BrowserRouter>
       <ProveedorConfirmacion>
-        <div className="app-shell">
-          <header className="app-header">
-            <span className="app-brand"> Distribuidora García</span>
-            <nav className="app-nav">
+        <div className="flex min-h-full flex-col">
+          <header className="flex items-center gap-4 px-4 h-14 bg-primary text-white shadow-sm">
+            <span className="flex-shrink-0 font-bold tracking-wide"> Distribuidora García</span>
+            <nav className="flex gap-1 mr-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  className={({ isActive }) => 'app-nav-link' + (isActive ? ' active' : '')}
+                  className={({ isActive }) =>
+                    'flex-shrink-0 text-white/80 no-underline px-[0.85rem] py-[0.4rem] rounded-full text-sm font-medium transition-colors duration-150 hover:bg-white/10 hover:text-white' +
+                    (isActive ? ' bg-accent text-[#201304] hover:bg-accent hover:text-[#201304]' : '')
+                  }
                 >
                   {item.label }
                 </NavLink>
@@ -68,7 +70,7 @@ export default function App() {
             </nav>
             <BotonTema />
           </header>
-          <main className="app-main">
+          <main className="flex-1 p-6 max-w-[1400px] w-full mx-auto">
             <Routes>
               <Route path="/" element={<Navigate to="/mostrador" replace />} />
               <Route path="/mostrador" element={<Mostrador />} />

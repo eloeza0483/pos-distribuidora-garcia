@@ -5,6 +5,11 @@ import DialogoCobro from '../components/DialogoCobro.jsx'
 import Ticket from '../components/Ticket.jsx'
 import { imprimirTicket } from '../lib/imprimir.js'
 import { dinero } from '../lib/formato.js'
+import {
+  CLASE_PAGE_TITLE, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE, CLASE_CARD, CLASE_AYUDA,
+  CLASE_SECCION_TITULO, CLASE_BTN_PRIMARY, CLASE_BTN_ACCENT, CLASE_BTN_DANGER,
+  CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES
+} from '../lib/clasesUi.js'
 
 function nuevaClaveIdempotencia() {
   return crypto.randomUUID()
@@ -12,8 +17,8 @@ function nuevaClaveIdempotencia() {
 
 function Foto({ imagePath, alt }) {
   const url = urlDeImagen(imagePath)
-  if (!url) return <div className="foto-vacia" aria-hidden="true">📦</div>
-  return <img className="foto" src={url} alt={alt} />
+  if (!url) return <div className={CLASE_FOTO_VACIA} aria-hidden="true">📦</div>
+  return <img className={CLASE_FOTO} src={url} alt={alt} />
 }
 
 // Las primeras 9 tarjetas de "Más vendidos" tienen atajo de teclado (1-9).
@@ -253,31 +258,31 @@ export default function Mostrador() {
 
   return (
     <div>
-      <h1 className="page-title">Mostrador</h1>
+      <h1 className={CLASE_PAGE_TITLE}>Mostrador</h1>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
 
       {ticket && (
-        <div className="card panel-ticket" style={{ marginBottom: '1rem', borderColor: 'var(--color-success)' }}>
-          <p className="seccion-titulo" style={{ margin: 0 }}>Venta #{ticket.folio} cobrada</p>
+        <div className={`${CLASE_CARD} ${CLASE_PANEL_TICKET} mb-4 border-success`}>
+          <p className={`${CLASE_SECCION_TITULO} m-0`}>Venta #{ticket.folio} cobrada</p>
           <div id="area-impresion">
             <Ticket ticket={ticket} />
           </div>
-          <div className="panel-ticket-acciones">
-            <button className="btn btn-primary" onClick={() => { imprimirTicket(); setYaImprimio(true) }}>
+          <div className={CLASE_PANEL_TICKET_ACCIONES}>
+            <button className={CLASE_BTN_PRIMARY} onClick={() => { imprimirTicket(); setYaImprimio(true) }}>
               {yaImprimio ? 'Imprimir de nuevo' : 'Imprimir'}
             </button>
           </div>
         </div>
       )}
 
-      <div className="mostrador-layout">
-        <div className="mostrador-principal">
-          <form onSubmit={alEscanear} className="card" style={{ display: 'flex', gap: '0.6rem' }}>
+      <div className="grid grid-cols-[1fr_400px] gap-5 items-start max-[900px]:grid-cols-1">
+        <div className="min-w-0 flex flex-col gap-4">
+          <form onSubmit={alEscanear} className={`${CLASE_CARD} flex gap-[0.6rem]`}>
             <input
               ref={inputCodigo}
               type="text"
-              className="input-codigo"
+              className="py-[0.9rem] px-4 text-[1.1rem]"
               placeholder="Escanea el código de barras (o captúralo y presiona Enter)"
               value={codigo}
               onChange={(e) => setCodigo(e.target.value)}
@@ -288,28 +293,39 @@ export default function Mostrador() {
                 }
               }}
             />
-            <button type="submit" className="btn btn-primary btn-agregar-codigo">Agregar</button>
+            <button type="submit" className={`${CLASE_BTN_PRIMARY} px-6 text-base`}>Agregar</button>
           </form>
 
-          <div className="card">
-            <p className="seccion-titulo">Más vendidos</p>
-            <p className="ayuda" style={{ marginTop: '-0.4rem', marginBottom: '0.8rem' }}>
+          <div className={CLASE_CARD}>
+            <p className={CLASE_SECCION_TITULO}>Más vendidos</p>
+            <p className={`${CLASE_AYUDA} -mt-[0.4rem] mb-[0.8rem]`}>
               Atajos: teclas 1–9 agregan estos productos · Enter o Espacio cobra la venta
             </p>
             {populares.length === 0 ? (
-              <div className="empty-state">Todavía no hay historial de ventas.</div>
+              <div className={CLASE_EMPTY_STATE}>Todavía no hay historial de ventas.</div>
             ) : (
-              <div className="tira-mas-vendidos">
+              <div className="grid [grid-auto-flow:column] [grid-template-rows:repeat(2,auto)] [grid-auto-columns:160px] gap-[0.7rem] overflow-x-auto pt-[0.3rem] px-[0.2rem] pb-[0.6rem]">
                 {populares.map((p, i) => {
                   const unidad = (p.units ?? []).find((u) => u.is_default) ?? p.units?.[0]
                   return (
-                    <button key={p.id} className="tarjeta-producto" onClick={() => agregarProducto(p)}>
-                      {i < TECLAS_ATAJO && <span className="tarjeta-atajo" aria-hidden="true">{i + 1}</span>}
+                    <button
+                      key={p.id}
+                      className="w-40 relative flex items-center gap-[0.6rem] text-left p-[0.6rem] border border-border rounded-[10px] bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                      onClick={() => agregarProducto(p)}
+                    >
+                      {i < TECLAS_ATAJO && (
+                        <span
+                          className="absolute -top-2 -left-2 min-w-[22px] h-[22px] px-[5px] rounded-[6px] bg-primary text-white text-xs font-bold flex items-center justify-center shadow-sm border-2 border-surface"
+                          aria-hidden="true"
+                        >
+                          {i + 1}
+                        </span>
+                      )}
                       <Foto imagePath={p.image_path} alt={p.product_name} />
                       <span>
-                        <span className="tarjeta-producto-nombre">{p.product_name}</span>
+                        <span className="text-[0.82rem] font-semibold leading-[1.25]">{p.product_name}</span>
                         <br />
-                        <span className="tarjeta-producto-precio">{dinero(unidad?.price)}</span>
+                        <span className="text-[0.82rem] text-primary font-bold">{dinero(unidad?.price)}</span>
                       </span>
                     </button>
                   )
@@ -318,20 +334,20 @@ export default function Mostrador() {
             )}
           </div>
 
-          <div className="card">
-            <p className="seccion-titulo">Todos los productos</p>
-            <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.9rem' }}>
+          <div className={CLASE_CARD}>
+            <p className={CLASE_SECCION_TITULO}>Todos los productos</p>
+            <div className="flex gap-[0.6rem] mb-[0.9rem]">
               <input
                 type="search"
                 placeholder="Buscar por nombre o precio…"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                style={{ flex: 1 }}
+                className="flex-1"
               />
               <select
                 value={categoriaId}
                 onChange={(e) => setCategoriaId(e.target.value)}
-                style={{ maxWidth: 220 }}
+                className="max-w-[220px]"
               >
                 <option value="">Todas las categorías</option>
                 {categorias.map((c) => (
@@ -340,20 +356,24 @@ export default function Mostrador() {
               </select>
             </div>
             {resultados.length === 0 ? (
-              <div className="empty-state">
+              <div className={CLASE_EMPTY_STATE}>
                 {busqueda.trim() || categoriaId ? 'Ningún producto coincide con ese filtro.' : 'Todavía no hay productos capturados.'}
               </div>
             ) : (
-              <div className="rejilla-productos">
+              <div className="grid gap-[0.7rem] [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
                 {resultados.map((p) => {
                   const unidad = (p.units ?? []).find((u) => u.is_default) ?? p.units?.[0]
                   return (
-                    <button key={p.id} className="tarjeta-producto" onClick={() => agregarProducto(p)}>
+                    <button
+                      key={p.id}
+                      className="relative flex items-center gap-[0.6rem] text-left p-[0.6rem] border border-border rounded-[10px] bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                      onClick={() => agregarProducto(p)}
+                    >
                       <Foto imagePath={p.image_path} alt={p.product_name} />
                       <span>
-                        <span className="tarjeta-producto-nombre">{p.product_name}</span>
+                        <span className="text-[0.82rem] font-semibold leading-[1.25]">{p.product_name}</span>
                         <br />
-                        <span className="tarjeta-producto-precio">{dinero(unidad?.price)}</span>
+                        <span className="text-[0.82rem] text-primary font-bold">{dinero(unidad?.price)}</span>
                       </span>
                     </button>
                   )
@@ -363,13 +383,13 @@ export default function Mostrador() {
           </div>
         </div>
 
-        <aside className="mostrador-carrito">
-          <div className="card carrito-card">
-            <p className="seccion-titulo">Venta actual</p>
+        <aside className="sticky top-4 max-[900px]:static">
+          <div className={`${CLASE_CARD} flex flex-col max-h-[calc(100vh-7rem)] max-[900px]:max-h-none`}>
+            <p className={CLASE_SECCION_TITULO}>Venta actual</p>
             {carrito.length === 0 ? (
-              <div className="empty-state">Escanea o elige un producto para empezar la venta.</div>
+              <div className={CLASE_EMPTY_STATE}>Escanea o elige un producto para empezar la venta.</div>
             ) : (
-              <div className="carrito-lista">
+              <div className="flex-1 overflow-y-auto -mx-2 px-2 max-[900px]:overflow-y-visible">
                 {carrito.map((item) => (
                   <RenglonCarrito
                     key={item.key}
@@ -382,13 +402,13 @@ export default function Mostrador() {
               </div>
             )}
 
-            <div className="carrito-resumen">
-              <div className="carrito-total">
+            <div className="border-t border-border mt-[0.9rem] pt-4 flex flex-col gap-[0.7rem]">
+              <div className="flex justify-between items-baseline text-[1.3rem] font-bold">
                 <span>Total</span>
-                <span className="carrito-total-cifra">{dinero(total)}</span>
+                <span className="text-primary-dark">{dinero(total)}</span>
               </div>
               <button
-                className="btn btn-accent btn-cobrar"
+                className={`${CLASE_BTN_ACCENT} w-full py-[0.9rem] text-[1.05rem]`}
                 disabled={carrito.length === 0 || cobrando}
                 onClick={cobrar}
               >
@@ -428,15 +448,19 @@ function RenglonCarrito({ item, onCantidad, onUnidad, onQuitar }) {
   }, [item.product_id])
 
   return (
-    <div className="carrito-renglon">
+    <div className="flex gap-[0.65rem] py-[0.8rem] border-b border-border first:pt-0 last:border-b-0 last:pb-0">
       <Foto imagePath={item.image_path} alt={item.product_name} />
-      <div className="carrito-renglon-info">
-        <span className="carrito-renglon-nombre">{item.product_name}</span>
-        <div className="carrito-renglon-controles">
+      <div className="flex-1 min-w-0 flex flex-col gap-[0.45rem]">
+        <span className="font-semibold text-[0.92rem] leading-[1.25]">{item.product_name}</span>
+        <div className="flex items-center gap-2 flex-wrap">
           {unidades === null || unidades.length <= 1 ? (
             <span>{item.unit_label}</span>
           ) : (
-            <select value={item.unit_id} onChange={(e) => onUnidad(item, e.target.value)}>
+            <select
+              className="!w-auto flex-1 min-w-[90px] !py-[0.4rem] !px-[0.55rem] !text-[0.88rem]"
+              value={item.unit_id}
+              onChange={(e) => onUnidad(item, e.target.value)}
+            >
               {unidades.map((u) => (
                 <option key={u.id} value={u.id}>{u.unit_label}</option>
               ))}
@@ -446,15 +470,15 @@ function RenglonCarrito({ item, onCantidad, onUnidad, onQuitar }) {
             type="number"
             min="0"
             step="any"
-            className="carrito-input-cantidad"
+            className="!w-[4.5rem] flex-none !py-[0.4rem] !px-[0.5rem] !text-[0.88rem] text-center"
             value={item.quantity}
             onChange={(e) => onCantidad(item.key, Number(e.target.value))}
           />
-          <span className="carrito-precio-unit">{dinero(item.unit_price)} c/u</span>
+          <span className="text-[0.82rem] text-text-muted whitespace-nowrap">{dinero(item.unit_price)} c/u</span>
         </div>
-        <div className="carrito-renglon-footer">
-          <span className="carrito-subtotal">{dinero(item.unit_price * item.quantity)}</span>
-          <button className="btn btn-danger btn-quitar-renglon" onClick={() => onQuitar(item.key)}>Quitar</button>
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-bold text-primary">{dinero(item.unit_price * item.quantity)}</span>
+          <button className={`${CLASE_BTN_DANGER} py-[0.3rem] px-[0.7rem] text-[0.8rem]`} onClick={() => onQuitar(item.key)}>Quitar</button>
         </div>
       </div>
     </div>

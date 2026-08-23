@@ -1,4 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import {
+  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
+  CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN_GHOST, CLASE_BTN_ACCENT, CLASE_BTN_PELIGRO_SOLIDO
+} from '../lib/clasesUi.js'
 
 const ConfirmacionContext = createContext(null)
 
@@ -40,38 +44,38 @@ export function ProveedorConfirmacion({ children }) {
     <ConfirmacionContext.Provider value={confirmar}>
       {children}
       {solicitud && (
-        <div className="modal-fondo" onClick={() => responder(false)}>
+        <div className={CLASE_MODAL_FONDO} onClick={() => responder(false)}>
           <div
-            className="modal"
+            className={CLASE_MODAL}
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-titulo"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="modal-titulo" className="modal-titulo">{solicitud.titulo}</h2>
+            <h2 id="modal-titulo" className={CLASE_MODAL_TITULO}>{solicitud.titulo}</h2>
 
-            {solicitud.mensaje && <p className="modal-mensaje">{solicitud.mensaje}</p>}
+            {solicitud.mensaje && <p className="m-0 mb-4 text-text-muted text-[0.92rem] leading-[1.45]">{solicitud.mensaje}</p>}
 
             {solicitud.detalles?.length > 0 && (
-              <dl className="modal-detalles">
+              <dl className={CLASE_MODAL_DETALLES}>
                 {solicitud.detalles.map((detalle) => (
-                  <div key={detalle.etiqueta} className="modal-detalle">
-                    <dt>{detalle.etiqueta}</dt>
-                    <dd>{detalle.valor}</dd>
+                  <div key={detalle.etiqueta} className={CLASE_MODAL_DETALLE}>
+                    <dt className="text-text-muted">{detalle.etiqueta}</dt>
+                    <dd className="m-0 font-semibold text-right">{detalle.valor}</dd>
                   </div>
                 ))}
               </dl>
             )}
 
-            {solicitud.advertencia && <p className="modal-advertencia">{solicitud.advertencia}</p>}
+            {solicitud.advertencia && <p className="m-0 mb-4 bg-accent-soft text-[#8a5417] rounded-lg px-[0.8rem] py-[0.6rem] text-[0.85rem]">{solicitud.advertencia}</p>}
 
-            <div className="modal-acciones">
-              <button className="btn btn-ghost" onClick={() => responder(false)}>
+            <div className={CLASE_MODAL_ACCIONES}>
+              <button className={CLASE_BTN_GHOST} onClick={() => responder(false)}>
                 {solicitud.textoCancelar || 'Cancelar'}
               </button>
               <button
                 ref={botonConfirmarRef}
-                className={`btn ${solicitud.peligroso ? 'btn-peligro-solido' : 'btn-accent'}`}
+                className={solicitud.peligroso ? CLASE_BTN_PELIGRO_SOLIDO : CLASE_BTN_ACCENT}
                 onClick={() => responder(true)}
               >
                 {solicitud.textoConfirmar || 'Confirmar'}

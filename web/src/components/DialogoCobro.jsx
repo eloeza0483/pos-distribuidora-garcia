@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api/client.js'
 import { mensajeDeError } from '../lib/errores.js'
 import { dinero } from '../lib/formato.js'
+import {
+  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
+  CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN, CLASE_BTN_GHOST,
+  CLASE_BTN_ACCENT, CLASE_BTN_PRIMARY, CLASE_FIELD, CLASE_ERROR_BANNER
+} from '../lib/clasesUi.js'
 
 const FORMAS_PAGO = [
   { valor: 'efectivo', etiqueta: 'Efectivo', tecla: '1' },
@@ -91,52 +96,52 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   if (!abierto) return null
 
   return (
-    <div className="modal-fondo" onClick={onCancelar}>
+    <div className={CLASE_MODAL_FONDO} onClick={onCancelar}>
       <div
-        className="modal"
+        className={CLASE_MODAL}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cobro-titulo"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="cobro-titulo" className="modal-titulo">Cobrar venta</h2>
+        <h2 id="cobro-titulo" className={CLASE_MODAL_TITULO}>Cobrar venta</h2>
 
-        {error && <div className="error-banner">{error}</div>}
+        {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
 
-        <dl className="modal-detalles">
-          <div className="modal-detalle">
-            <dt>Renglones</dt>
-            <dd>{resumen.renglones}</dd>
+        <dl className={CLASE_MODAL_DETALLES}>
+          <div className={CLASE_MODAL_DETALLE}>
+            <dt className="text-text-muted">Renglones</dt>
+            <dd className="m-0 font-semibold text-right">{resumen.renglones}</dd>
           </div>
-          <div className="modal-detalle">
-            <dt>Piezas</dt>
-            <dd>{resumen.piezas}</dd>
+          <div className={CLASE_MODAL_DETALLE}>
+            <dt className="text-text-muted">Piezas</dt>
+            <dd className="m-0 font-semibold text-right">{resumen.piezas}</dd>
           </div>
-          <div className="modal-detalle">
-            <dt>Total a cobrar</dt>
-            <dd>{dinero(total)}</dd>
+          <div className={CLASE_MODAL_DETALLE}>
+            <dt className="text-text-muted">Total a cobrar</dt>
+            <dd className="m-0 font-semibold text-right">{dinero(total)}</dd>
           </div>
         </dl>
 
-        <div className="field">
-          <label>Forma de pago</label>
-          <div className="cobro-formas-pago">
+        <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
+          <label className="font-semibold text-text">Forma de pago</label>
+          <div className="flex gap-2 flex-wrap">
             {FORMAS_PAGO.map((f) => (
               <button
                 key={f.valor}
                 type="button"
-                className={`btn cobro-forma-pago ${formaPago === f.valor ? 'btn-primary' : 'btn-ghost'}`}
+                className={`${CLASE_BTN} flex-1 min-w-[100px] ${formaPago === f.valor ? CLASE_BTN_PRIMARY : CLASE_BTN_GHOST}`}
                 onClick={() => setFormaPago(f.valor)}
               >
-                <span className="cobro-forma-pago-tecla">{f.tecla}</span> {f.etiqueta}
+                <span className="inline-block min-w-[1.1rem] opacity-70 text-[0.8rem] mr-[0.3rem]">{f.tecla}</span> {f.etiqueta}
               </button>
             ))}
           </div>
         </div>
 
         {formaPago === 'efectivo' && (
-          <div className="field">
-            <label htmlFor="cobro-efectivo">Con cuánto paga</label>
+          <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
+            <label htmlFor="cobro-efectivo" className="font-semibold text-text">Con cuánto paga</label>
             <input
               id="cobro-efectivo"
               ref={inputEfectivo}
@@ -146,12 +151,12 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
               value={efectivoRecibido}
               onChange={(e) => setEfectivoRecibido(e.target.value)}
             />
-            <div className="cobro-billetes">
+            <div className="flex gap-[0.4rem] flex-wrap mt-2">
               {BILLETES.map((valor) => (
                 <button
                   key={valor}
                   type="button"
-                  className="btn btn-ghost cobro-billete"
+                  className={`${CLASE_BTN_GHOST} flex-1 min-w-[72px] py-[0.4rem] px-[0.5rem] [font-variant-numeric:tabular-nums]`}
                   onClick={() => agregarBillete(valor)}
                 >
                   +{dinero(valor)}
@@ -160,7 +165,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
               {efectivoRecibido !== '' && (
                 <button
                   type="button"
-                  className="btn btn-ghost cobro-billete"
+                  className={`${CLASE_BTN_GHOST} flex-1 min-w-[72px] py-[0.4rem] px-[0.5rem] [font-variant-numeric:tabular-nums]`}
                   onClick={() => setEfectivoRecibido('')}
                 >
                   Limpiar
@@ -168,15 +173,15 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
               )}
             </div>
             {efectivoRecibido !== '' && (
-              <p className={`cobro-cambio ${efectivoInsuficiente ? 'cobro-cambio-insuficiente' : ''}`}>
+              <p className={`m-0 mt-[0.4rem] text-[1.4rem] font-bold ${efectivoInsuficiente ? 'text-danger' : 'text-success'}`}>
                 {efectivoInsuficiente ? 'Falta ' + dinero(total - Number(efectivoRecibido)) : `Cambio: ${dinero(cambio)}`}
               </p>
             )}
           </div>
         )}
 
-        <div className="field">
-          <label htmlFor="cobro-cliente">Cliente</label>
+        <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
+          <label htmlFor="cobro-cliente" className="font-semibold text-text">Cliente</label>
           <select id="cobro-cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
             {clientes.map((c) => (
               <option key={c.id} value={c.id}>{c.client_name}</option>
@@ -184,9 +189,9 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
           </select>
         </div>
 
-        <div className="modal-acciones">
-          <button className="btn btn-ghost" onClick={onCancelar}>Cancelar</button>
-          <button className="btn btn-accent" disabled={!puedeCobrar || cobrando} onClick={confirmar}>
+        <div className={CLASE_MODAL_ACCIONES}>
+          <button className={CLASE_BTN_GHOST} onClick={onCancelar}>Cancelar</button>
+          <button className={CLASE_BTN_ACCENT} disabled={!puedeCobrar || cobrando} onClick={confirmar}>
             {cobrando ? 'Cobrando…' : 'Sí, cobrar'}
           </button>
         </div>

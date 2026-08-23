@@ -5,6 +5,11 @@ import { useConfirmacion } from '../components/Confirmacion.jsx'
 import Ticket from '../components/Ticket.jsx'
 import { imprimirTicket } from '../lib/imprimir.js'
 import { dinero, fecha } from '../lib/formato.js'
+import {
+  CLASE_CARD, CLASE_PAGE_TITLE, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE,
+  CLASE_BTN_PRIMARY, CLASE_BTN_PELIGRO_SOLIDO, CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES,
+  CLASE_FILA_TACHADA
+} from '../lib/clasesUi.js'
 
 const NOMBRE_FORMA_PAGO = {
   efectivo: 'Efectivo',
@@ -81,48 +86,48 @@ export default function Ventas() {
 
   return (
     <div>
-      <h1 className="page-title">Ventas</h1>
+      <h1 className={CLASE_PAGE_TITLE}>Ventas</h1>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
 
       {corte && (
-        <div className="card ventas-corte">
-          <div className="ventas-corte-cifra">
-            <span className="valor">{dinero(corte.total)}</span>
-            <span className="etiqueta">Corte de hoy</span>
+        <div className={`${CLASE_CARD} flex flex-wrap gap-6 mb-4`}>
+          <div className="flex flex-col gap-[0.2rem]">
+            <span className="text-[1.4rem] font-bold text-primary-dark">{dinero(corte.total)}</span>
+            <span className="text-xs text-text-muted uppercase tracking-wide">Corte de hoy</span>
           </div>
-          <div className="ventas-corte-cifra">
-            <span className="valor">{corte.tickets}</span>
-            <span className="etiqueta">Tickets</span>
+          <div className="flex flex-col gap-[0.2rem]">
+            <span className="text-[1.4rem] font-bold text-primary-dark">{corte.tickets}</span>
+            <span className="text-xs text-text-muted uppercase tracking-wide">Tickets</span>
           </div>
           {corte.por_forma_de_pago.map((p) => (
-            <div className="ventas-corte-cifra" key={p.payment_method ?? 'sin_forma'}>
-              <span className="valor">{dinero(p.total)}</span>
-              <span className="etiqueta">{p.payment_method ? NOMBRE_FORMA_PAGO[p.payment_method] ?? p.payment_method : 'Sin forma de pago'}</span>
+            <div className="flex flex-col gap-[0.2rem]" key={p.payment_method ?? 'sin_forma'}>
+              <span className="text-[1.4rem] font-bold text-primary-dark">{dinero(p.total)}</span>
+              <span className="text-xs text-text-muted uppercase tracking-wide">{p.payment_method ? NOMBRE_FORMA_PAGO[p.payment_method] ?? p.payment_method : 'Sin forma de pago'}</span>
             </div>
           ))}
           {corte.cancelados > 0 && (
-            <div className="ventas-corte-cifra">
-              <span className="valor">{corte.cancelados}</span>
-              <span className="etiqueta">Cancelados</span>
+            <div className="flex flex-col gap-[0.2rem]">
+              <span className="text-[1.4rem] font-bold text-primary-dark">{corte.cancelados}</span>
+              <span className="text-xs text-text-muted uppercase tracking-wide">Cancelados</span>
             </div>
           )}
         </div>
       )}
 
-      <div className="ventas-layout">
+      <div className="grid grid-cols-[1fr_340px] gap-5 items-stretch max-[900px]:grid-cols-1">
         <div>
-          <div className="card">
-            <div className="ventas-filtros">
-              <div className="field">
+          <div className={CLASE_CARD}>
+            <div className="flex flex-wrap gap-[0.6rem] mb-4">
+              <div className={`${CLASE_FIELD} flex-1 min-w-[150px]`}>
                 <label htmlFor="ventas-desde">Desde</label>
                 <input id="ventas-desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
               </div>
-              <div className="field">
+              <div className={`${CLASE_FIELD} flex-1 min-w-[150px]`}>
                 <label htmlFor="ventas-hasta">Hasta</label>
                 <input id="ventas-hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
               </div>
-              <div className="field">
+              <div className={`${CLASE_FIELD} flex-1 min-w-[150px]`}>
                 <label htmlFor="ventas-forma-pago">Forma de pago</label>
                 <select id="ventas-forma-pago" value={formaPago} onChange={(e) => setFormaPago(e.target.value)}>
                   <option value="">Todas</option>
@@ -131,7 +136,7 @@ export default function Ventas() {
                   <option value="transferencia">Transferencia</option>
                 </select>
               </div>
-              <div className="field">
+              <div className={`${CLASE_FIELD} flex-1 min-w-[150px]`}>
                 <label htmlFor="ventas-busqueda">Folio</label>
                 <input
                   id="ventas-busqueda"
@@ -144,9 +149,9 @@ export default function Ventas() {
             </div>
 
             {cargando ? (
-              <div className="empty-state">Cargando…</div>
+              <div className={CLASE_EMPTY_STATE}>Cargando…</div>
             ) : ventas.length === 0 ? (
-              <div className="empty-state">No hay ventas con ese filtro.</div>
+              <div className={CLASE_EMPTY_STATE}>No hay ventas con ese filtro.</div>
             ) : (
               <table>
                 <thead>
@@ -163,7 +168,7 @@ export default function Ventas() {
                   {ventas.map((v) => (
                     <tr
                       key={v.order_id}
-                      className={`fila-venta ${v.cancelled_at ? 'fila-cancelada' : ''}`}
+                      className={`cursor-pointer hover:bg-bg ${v.cancelled_at ? CLASE_FILA_TACHADA : ''}`}
                       onClick={() => abrirDetalle(v.order_id)}
                     >
                       <td>#{v.order_id}</td>
@@ -182,19 +187,19 @@ export default function Ventas() {
 
         <aside>
           {detalle ? (
-            <div className="card panel-ticket">
+            <div className={`${CLASE_CARD} ${CLASE_PANEL_TICKET}`}>
               <div id="area-impresion">
                 <Ticket ticket={detalle.ticket} />
               </div>
-              <div className="panel-ticket-acciones">
-                <button className="btn btn-primary" onClick={imprimirTicket}>Imprimir</button>
+              <div className={CLASE_PANEL_TICKET_ACCIONES}>
+                <button className={CLASE_BTN_PRIMARY} onClick={imprimirTicket}>Imprimir</button>
                 {detalle.status !== 'CANCELADO' && (
-                  <button className="btn btn-peligro-solido" onClick={cancelarVenta}>Cancelar venta</button>
+                  <button className={CLASE_BTN_PELIGRO_SOLIDO} onClick={cancelarVenta}>Cancelar venta</button>
                 )}
               </div>
             </div>
           ) : (
-            <div className="card empty-state empty-state-detalle">Elige una venta del listado para ver su detalle.</div>
+            <div className={`${CLASE_CARD} ${CLASE_EMPTY_STATE} flex items-center justify-center text-center min-h-full`}>Elige una venta del listado para ver su detalle.</div>
           )}
         </aside>
       </div>

@@ -5,6 +5,17 @@ import { useConfirmacion } from '../components/Confirmacion.jsx'
 import {
   piezas, fecha, TIPOS_MOVIMIENTO, etiquetaTipo, existenciaResultante
 } from '../lib/formato.js'
+import {
+  CLASE_CARD, CLASE_PAGE_TITLE, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE,
+  CLASE_AYUDA, CLASE_BTN_PRIMARY, CLASE_BTN_DANGER, CLASE_PILL_ENTRADA, CLASE_PILL_SALIDA,
+  CLASE_PILL_AJUSTE, CLASE_FILA_TACHADA
+} from '../lib/clasesUi.js'
+
+const CLASES_PILL_TIPO = {
+  entrada: CLASE_PILL_ENTRADA,
+  salida: CLASE_PILL_SALIDA,
+  ajuste: CLASE_PILL_AJUSTE
+}
 
 const formularioVacio = { product_id: '', type: 'entrada', quantity: '', unit_label: '', reason: '' }
 
@@ -157,14 +168,14 @@ export default function Inventario() {
 
   return (
     <div>
-      <h1 className="page-title">Inventario</h1>
+      <h1 className={CLASE_PAGE_TITLE}>Inventario</h1>
 
-      {error && <div className="error-banner">{error}</div>}
-      {aviso && <div className="card" style={{ marginBottom: '1rem', borderColor: 'var(--color-success)' }}>{aviso}</div>}
+      {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
+      {aviso && <div className={`${CLASE_CARD} mb-4 border-success`}>{aviso}</div>}
 
-      <form onSubmit={alEnviar} className="card" style={{ marginBottom: '1.25rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', alignItems: 'end' }}>
-          <label className="field">
+      <form onSubmit={alEnviar} className={`${CLASE_CARD} mb-5`}>
+        <div className="grid grid-cols-5 gap-3 items-end">
+          <label className={CLASE_FIELD}>
             Producto
             <select value={form.product_id} onChange={(e) => actualizarCampo('product_id', e.target.value)} required>
               <option value="" disabled>Selecciona…</option>
@@ -174,7 +185,7 @@ export default function Inventario() {
             </select>
           </label>
 
-          <label className="field">
+          <label className={CLASE_FIELD}>
             ¿Qué pasó?
             <select value={form.type} onChange={(e) => actualizarCampo('type', e.target.value)}>
               {TIPOS_MOVIMIENTO.map((t) => (
@@ -183,7 +194,7 @@ export default function Inventario() {
             </select>
           </label>
 
-          <label className="field">
+          <label className={CLASE_FIELD}>
             {form.type === 'ajuste' ? 'Cantidad contada' : 'Cantidad'}
             <input
               type="number"
@@ -195,7 +206,7 @@ export default function Inventario() {
             />
           </label>
 
-          <label className="field">
+          <label className={CLASE_FIELD}>
             ¿En qué se cuenta?
             <select
               value={form.unit_label}
@@ -211,13 +222,13 @@ export default function Inventario() {
             </select>
           </label>
 
-          <button type="submit" className="btn btn-primary" disabled={guardando}>
+          <button type="submit" className={CLASE_BTN_PRIMARY} disabled={guardando}>
             {guardando ? 'Guardando…' : 'Registrar'}
           </button>
         </div>
 
         {productoElegido && (
-          <p className="ayuda">
+          <p className={CLASE_AYUDA}>
             Existencia actual de {productoElegido.product_name}: <strong>{piezas(productoElegido.stock_base)}</strong>
             {unidadElegida && unidadElegida.base_qty !== null && unidadElegida.base_qty !== 1 && (
               <> · un {unidadElegida.unit_label} trae {unidadElegida.base_qty} piezas</>
@@ -225,7 +236,7 @@ export default function Inventario() {
           </p>
         )}
 
-        <label className="field" style={{ marginTop: '0.75rem' }}>
+        <label className={`${CLASE_FIELD} mt-3`}>
           Motivo (opcional)
           <input
             type="text"
@@ -236,11 +247,11 @@ export default function Inventario() {
         </label>
       </form>
 
-      <div className="card">
+      <div className={CLASE_CARD}>
         {cargando ? (
-          <div className="empty-state">Cargando…</div>
+          <div className={CLASE_EMPTY_STATE}>Cargando…</div>
         ) : movimientos.length === 0 ? (
-          <div className="empty-state">Todavía no hay movimientos registrados.</div>
+          <div className={CLASE_EMPTY_STATE}>Todavía no hay movimientos registrados.</div>
         ) : (
           <table>
             <thead>
@@ -258,16 +269,16 @@ export default function Inventario() {
               {movimientos.map((m) => {
                 const impedimento = motivoNoSePuedeDeshacer(m)
                 return (
-                  <tr key={m.id} className={m.is_reverted ? 'fila-revertida' : undefined}>
+                  <tr key={m.id} className={m.is_reverted ? CLASE_FILA_TACHADA : undefined}>
                     <td>{fecha(m.created_at)}</td>
                     <td>{m.product_name}</td>
-                    <td><span className={`pill pill-${m.type}`}>{etiquetaTipo(m.type)}</span></td>
+                    <td><span className={CLASES_PILL_TIPO[m.type]}>{etiquetaTipo(m.type)}</span></td>
                     <td>{m.quantity} {m.unit_label || 'pieza'}</td>
                     <td>{piezas(m.stock_after)}</td>
                     <td>{m.reason || '—'}</td>
                     <td>
                       <button
-                        className="btn btn-danger"
+                        className={CLASE_BTN_DANGER}
                         onClick={() => deshacer(m)}
                         disabled={impedimento !== null}
                         title={impedimento ?? 'Registra el movimiento contrario'}

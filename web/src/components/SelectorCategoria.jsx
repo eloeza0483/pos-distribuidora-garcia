@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CLASE_BTN_GHOST } from '../lib/clasesUi.js'
 
 const NUEVA_CATEGORIA = '__nueva__'
 
@@ -57,7 +58,7 @@ export default function SelectorCategoria({ categorias, value, onChange, onCrear
           />
           <button
             type="button"
-            className="btn btn-ghost"
+            className={CLASE_BTN_GHOST}
             onClick={confirmarNueva}
             disabled={guardando || !nombreNuevo.trim()}
           >
