@@ -190,7 +190,11 @@ tr:last-child td {
   }
 
   #area-impresion {
-    position: absolute;
+    /* fixed y no absolute: el ticket se imprime desde dentro del modal
+       (fixed + relative), y absolute se posicionaría respecto a ese
+       contenedor relative en vez de la página, dejando un hueco en blanco
+       arriba igual de alto que el centrado vertical del modal. */
+    position: fixed;
     top: 0;
     left: 0;
     width: auto;
