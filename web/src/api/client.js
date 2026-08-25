@@ -1,4 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+// Vacío = mismo origen (Vite proxy en dev). Si hay VITE_API_URL, se usa esa.
+const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 export class ApiError extends Error {
   constructor(status, payload) {

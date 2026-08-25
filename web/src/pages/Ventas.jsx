@@ -192,7 +192,7 @@ export default function Ventas() {
                 <Ticket ticket={detalle.ticket} />
               </div>
               <div className={CLASE_PANEL_TICKET_ACCIONES}>
-                <button className={CLASE_BTN_PRIMARY} onClick={imprimirTicket}>Imprimir</button>
+                <button className={CLASE_BTN_PRIMARY} onClick={() => imprimirTicket(detalle.ticket.ancho_mm)}>Imprimir</button>
                 {detalle.status !== 'CANCELADO' && (
                   <button className={CLASE_BTN_PELIGRO_SOLIDO} onClick={cancelarVenta}>Cancelar venta</button>
                 )}

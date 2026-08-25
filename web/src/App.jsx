@@ -53,7 +53,7 @@ export default function App() {
       <ProveedorConfirmacion>
         <div className="flex min-h-full flex-col">
           <header className="flex items-center gap-4 px-4 h-14 bg-primary text-white shadow-sm">
-            <span className="flex-shrink-0 font-bold tracking-wide"> Distribuidora García</span>
+            <NavLink to="/mostrador" className="flex-shrink font-bold tracking-wide"> Distribuidora García</NavLink>
             <nav className="flex gap-1 mr-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navItems.map((item) => (
                 <NavLink

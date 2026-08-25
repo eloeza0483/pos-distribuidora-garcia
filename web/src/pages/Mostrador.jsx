@@ -8,7 +8,8 @@ import { dinero } from '../lib/formato.js'
 import {
   CLASE_PAGE_TITLE, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE, CLASE_CARD, CLASE_AYUDA,
   CLASE_SECCION_TITULO, CLASE_BTN_PRIMARY, CLASE_BTN_ACCENT, CLASE_BTN_DANGER,
-  CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES
+  CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES,
+  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_CERRAR
 } from '../lib/clasesUi.js'
 
 function nuevaClaveIdempotencia() {
@@ -39,6 +40,11 @@ export default function Mostrador() {
   const [yaImprimio, setYaImprimio] = useState(false)
   const inputCodigo = useRef(null)
   const claveIdempotencia = useRef(nuevaClaveIdempotencia())
+  // Recuerda si la última interacción de puntero fue con el dedo, para no
+  // regresar el foco al código de barras al tocar una tarjeta: eso abre el
+  // teclado en pantalla en tablets, algo que solo estorba porque ahí no hay
+  // un lector físico escribiendo en ese campo.
+  const ultimoPunteroEsTouch = useRef(false)
 
   const total = carrito.reduce((suma, item) => suma + item.unit_price * item.quantity, 0)
 
@@ -138,7 +144,11 @@ export default function Mostrador() {
       image_path: producto.image_path,
       unit: unidad
     })
-    if (refocus) inputCodigo.current?.focus()
+    if (refocus && !ultimoPunteroEsTouch.current) inputCodigo.current?.focus()
+  }
+
+  function alTocarTarjeta(e) {
+    ultimoPunteroEsTouch.current = e.pointerType === 'touch'
   }
 
   function cambiarCantidad(key, quantity) {
@@ -232,6 +242,11 @@ export default function Mostrador() {
   // sus propios atajos de Enter/Escape).
   useEffect(() => {
     function alTecla(e) {
+      if (e.key === 'Escape' && ticket) {
+        e.preventDefault()
+        setTicket(null)
+        return
+      }
       if (dialogoCobroAbierto) return
 
       const activo = document.activeElement
@@ -254,7 +269,7 @@ export default function Mostrador() {
     }
     window.addEventListener('keydown', alTecla)
     return () => window.removeEventListener('keydown', alTecla)
-  }, [populares, carrito, cobrando, dialogoCobroAbierto])
+  }, [populares, carrito, cobrando, dialogoCobroAbierto, ticket])
 
   return (
     <div>
@@ -263,15 +278,33 @@ export default function Mostrador() {
       {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
 
       {ticket && (
-        <div className={`${CLASE_CARD} ${CLASE_PANEL_TICKET} mb-4 border-success`}>
-          <p className={`${CLASE_SECCION_TITULO} m-0`}>Venta #{ticket.folio} cobrada</p>
-          <div id="area-impresion">
-            <Ticket ticket={ticket} />
-          </div>
-          <div className={CLASE_PANEL_TICKET_ACCIONES}>
-            <button className={CLASE_BTN_PRIMARY} onClick={() => { imprimirTicket(); setYaImprimio(true) }}>
-              {yaImprimio ? 'Imprimir de nuevo' : 'Imprimir'}
+        <div className={CLASE_MODAL_FONDO} onClick={() => setTicket(null)}>
+          <div
+            className={`${CLASE_MODAL} relative max-w-[480px] max-h-[85vh] overflow-y-auto`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ticket-titulo"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={CLASE_MODAL_CERRAR}
+              aria-label="Cerrar"
+              onClick={() => setTicket(null)}
+            >
+              ×
             </button>
+            <p id="ticket-titulo" className={`${CLASE_SECCION_TITULO} m-0`}>Venta #{ticket.folio} cobrada</p>
+            <div className={CLASE_PANEL_TICKET}>
+              <div id="area-impresion">
+                <Ticket ticket={ticket} />
+              </div>
+              <div className={CLASE_PANEL_TICKET_ACCIONES}>
+                <button className={CLASE_BTN_PRIMARY} onClick={() => { imprimirTicket(ticket.ancho_mm); setYaImprimio(true) }}>
+                  {yaImprimio ? 'Imprimir de nuevo' : 'Imprimir'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -311,6 +344,7 @@ export default function Mostrador() {
                     <button
                       key={p.id}
                       className="w-40 relative flex items-center gap-[0.6rem] text-left p-[0.6rem] border border-border rounded-[10px] bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                      onPointerDown={alTocarTarjeta}
                       onClick={() => agregarProducto(p)}
                     >
                       {i < TECLAS_ATAJO && (
@@ -367,6 +401,7 @@ export default function Mostrador() {
                     <button
                       key={p.id}
                       className="relative flex items-center gap-[0.6rem] text-left p-[0.6rem] border border-border rounded-[10px] bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                      onPointerDown={alTocarTarjeta}
                       onClick={() => agregarProducto(p)}
                     >
                       <Foto imagePath={p.image_path} alt={p.product_name} />

@@ -193,7 +193,10 @@ tr:last-child td {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
+    width: auto;
+  }
+
+  #area-impresion > * {
     border: none;
     box-shadow: none;
   }

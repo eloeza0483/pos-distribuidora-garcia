@@ -23,6 +23,7 @@ export const CLASE_MODAL_TITULO = 'm-0 mb-2 text-[1.15rem] text-primary-dark'
 export const CLASE_MODAL_DETALLES = 'm-0 mb-4 bg-bg rounded-lg px-[0.9rem] py-3'
 export const CLASE_MODAL_DETALLE = 'flex justify-between gap-4 py-[0.28rem] text-[0.9rem]'
 export const CLASE_MODAL_ACCIONES = 'flex justify-end gap-[0.6rem]'
+export const CLASE_MODAL_CERRAR = 'absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-text-muted hover:bg-bg hover:text-text text-lg leading-none border-none bg-transparent cursor-pointer'
 
 export const CLASE_PILL = 'inline-block px-[0.55rem] py-[0.15rem] rounded-full text-xs font-semibold'
 export const CLASE_PILL_ENTRADA = `${CLASE_PILL} bg-success-soft text-success`
