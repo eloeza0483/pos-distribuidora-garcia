@@ -181,7 +181,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                   <img
                     src={imagen}
                     alt={`Billete de ${dinero(valor)}`}
-                    className="w-24 h-9 object-cover rounded-sm bg-bg"
+                    className="w-24 aspect-[2.75] object-cover object-center rounded-sm bg-bg"
                     draggable="false"
                   />
                   <span className="text-[0.7rem] font-semibold text-text-muted [font-variant-numeric:tabular-nums] group-hover:text-primary">
