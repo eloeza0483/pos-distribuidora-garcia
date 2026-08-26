@@ -16,7 +16,14 @@ const FORMAS_PAGO = [
 
 const CLIENTE_POR_OMISION = 'Público en General'
 
-const BILLETES = [20, 50, 100, 200, 500, 1000]
+const BILLETES = [
+  { valor: 20, imagen: '/billetes/billete-20.png' },
+  { valor: 50, imagen: '/billetes/billete-50.png' },
+  { valor: 100, imagen: '/billetes/billete-100.png' },
+  { valor: 200, imagen: '/billetes/billete-200.png' },
+  { valor: 500, imagen: '/billetes/billete-500.png' },
+  { valor: 1000, imagen: '/billetes/billete-1000.png' }
+]
 
 // El modal de cobro: reemplaza al useConfirmacion() genérico en el camino de
 // venta porque necesita capturar forma de pago, efectivo/cambio y cliente —
@@ -141,7 +148,18 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
 
         {formaPago === 'efectivo' && (
           <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
-            <label htmlFor="cobro-efectivo" className="font-semibold text-text">Con cuánto paga</label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="cobro-efectivo" className="font-semibold text-text">Con cuánto paga</label>
+              {efectivoRecibido !== '' && (
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-text-muted hover:text-primary underline-offset-2 hover:underline"
+                  onClick={() => setEfectivoRecibido('')}
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
             <input
               id="cobro-efectivo"
               ref={inputEfectivo}
@@ -151,26 +169,26 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
               value={efectivoRecibido}
               onChange={(e) => setEfectivoRecibido(e.target.value)}
             />
-            <div className="flex gap-[0.4rem] flex-wrap mt-2">
-              {BILLETES.map((valor) => (
+            <div className="flex gap-2 flex-wrap mt-2">
+              {BILLETES.map(({ valor, imagen }) => (
                 <button
                   key={valor}
                   type="button"
-                  className={`${CLASE_BTN_GHOST} flex-1 min-w-[72px] py-[0.4rem] px-[0.5rem] [font-variant-numeric:tabular-nums]`}
                   onClick={() => agregarBillete(valor)}
+                  aria-label={`Agregar billete de ${dinero(valor)}`}
+                  className="group flex flex-col items-center gap-1 rounded-xl border border-border bg-surface p-1.5 cursor-pointer transition-[border-color,box-shadow,transform] duration-150 hover:border-primary hover:shadow-sm active:scale-95"
                 >
-                  +{dinero(valor)}
+                  <img
+                    src={imagen}
+                    alt={`Billete de ${dinero(valor)}`}
+                    className="w-20 h-11 object-cover rounded-sm bg-bg"
+                    draggable="false"
+                  />
+                  <span className="text-[0.7rem] font-semibold text-text-muted [font-variant-numeric:tabular-nums] group-hover:text-primary">
+                    {dinero(valor)}
+                  </span>
                 </button>
               ))}
-              {efectivoRecibido !== '' && (
-                <button
-                  type="button"
-                  className={`${CLASE_BTN_GHOST} flex-1 min-w-[72px] py-[0.4rem] px-[0.5rem] [font-variant-numeric:tabular-nums]`}
-                  onClick={() => setEfectivoRecibido('')}
-                >
-                  Limpiar
-                </button>
-              )}
             </div>
             {efectivoRecibido !== '' && (
               <p className={`m-0 mt-[0.4rem] text-[1.4rem] font-bold ${efectivoInsuficiente ? 'text-danger' : 'text-success'}`}>
