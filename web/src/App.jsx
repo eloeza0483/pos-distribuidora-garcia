@@ -53,7 +53,18 @@ export default function App() {
       <ProveedorConfirmacion>
         <div className="flex min-h-full flex-col">
           <header className="flex items-center gap-4 px-4 h-14 bg-primary text-white shadow-sm">
-            <NavLink to="/mostrador" className="flex-shrink font-bold tracking-wide"> Distribuidora García</NavLink>
+            <NavLink to="/mostrador" className="flex-shrink-0 flex items-center gap-2">
+              <span className="flex-shrink-0 w-9 h-7 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: '#16233f' }} aria-hidden="true">
+                <svg width="26" height="16" viewBox="0 0 62 40">
+                  <text x="0" y="31" fontFamily="'Zilla Slab', Georgia, serif" fontWeight="700" fontSize="34" fill="#6bb8dc">D</text>
+                  <text x="26" y="31" fontFamily="'Zilla Slab', Georgia, serif" fontWeight="700" fontSize="34" fill="#6bb8dc">G</text>
+                </svg>
+              </span>
+              <span className="flex flex-col leading-tight">
+                <span className="font-heading font-bold text-[0.95rem]">Distribuidora García</span>
+                <span className="text-[0.58rem] font-semibold tracking-wide text-white/75 -mt-0.5 hidden sm:block">venta de desechables y bolsas</span>
+              </span>
+            </NavLink>
             <nav className="flex gap-1 mr-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navItems.map((item) => (
                 <NavLink

@@ -11,15 +11,15 @@
   --color-primary-dark: #1a3f80;
   --color-primary-soft: #e8eefb;
 
-  --color-accent: #e08a2c;
-  --color-accent-soft: #fbeedd;
+  --color-accent: #e0b62c;
+  --color-accent-soft: #fbf3dd;
 
   --color-danger: #c0392b;
   --color-danger-soft: #fbeae7;
   --color-success: #2f8f5b;
   --color-success-soft: #e6f4ec;
 
-  --radius: 10px;
+  --radius: 16px;
   --shadow-sm: 0 1px 2px rgba(20, 30, 60, 0.06);
   --shadow-md: 0 4px 16px rgba(20, 30, 60, 0.08);
 
@@ -39,8 +39,8 @@
     --color-primary-dark: #7ea3e0;
     --color-primary-soft: #1e2d47;
 
-    --color-accent: #e8a25a;
-    --color-accent-soft: #3a2c18;
+    --color-accent: #e6c34a;
+    --color-accent-soft: #3d3418;
 
     --color-danger: #e0685a;
     --color-danger-soft: #3a201d;
@@ -66,8 +66,8 @@
   --color-primary-dark: #7ea3e0;
   --color-primary-soft: #1e2d47;
 
-  --color-accent: #e8a25a;
-  --color-accent-soft: #3a2c18;
+  --color-accent: #e6c34a;
+  --color-accent-soft: #3d3418;
 
   --color-danger: #e0685a;
   --color-danger-soft: #3a201d;
@@ -102,6 +102,8 @@
   --radius-DEFAULT: var(--radius);
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
+
+  --font-heading: 'Zilla Slab', Georgia, serif;
 }
 
 * {
@@ -118,7 +120,7 @@ html, body {
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Work Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   background: var(--color-bg);
   color: var(--color-text);
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -136,6 +138,7 @@ input, select, textarea {
 input[type='text'],
 input[type='number'],
 input[type='search'],
+input[type='date'],
 select {
   width: 100%;
   padding: 0.65rem 0.85rem;
@@ -144,6 +147,10 @@ select {
   border-radius: 8px;
   background: var(--color-surface);
   color: var(--color-text);
+}
+
+input[type='date'] {
+  color-scheme: light dark;
 }
 
 input:focus,

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, urlDeImagen } from '../api/client.js'
 import { mensajeDeError } from '../lib/errores.js'
+import { useConfirmacion } from '../components/Confirmacion.jsx'
 import DialogoCobro from '../components/DialogoCobro.jsx'
 import Ticket from '../components/Ticket.jsx'
 import { imprimirTicket } from '../lib/imprimir.js'
@@ -8,7 +9,8 @@ import { dinero } from '../lib/formato.js'
 import {
   CLASE_PAGE_TITLE, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE, CLASE_CARD, CLASE_AYUDA,
   CLASE_SECCION_TITULO, CLASE_BTN_PRIMARY, CLASE_BTN_ACCENT, CLASE_BTN_DANGER,
-  CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES,
+  CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_FOTO_GRANDE, CLASE_FOTO_GRANDE_VACIA,
+  CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES,
   CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_CERRAR
 } from '../lib/clasesUi.js'
 
@@ -16,10 +18,10 @@ function nuevaClaveIdempotencia() {
   return crypto.randomUUID()
 }
 
-function Foto({ imagePath, alt }) {
+function Foto({ imagePath, alt, grande = false }) {
   const url = urlDeImagen(imagePath)
-  if (!url) return <div className={CLASE_FOTO_VACIA} aria-hidden="true">📦</div>
-  return <img className={CLASE_FOTO} src={url} alt={alt} />
+  if (!url) return <div className={grande ? CLASE_FOTO_GRANDE_VACIA : CLASE_FOTO_VACIA} aria-hidden="true">📦</div>
+  return <img className={grande ? CLASE_FOTO_GRANDE : CLASE_FOTO} src={url} alt={alt} />
 }
 
 // Las primeras 9 tarjetas de "Más vendidos" tienen atajo de teclado (1-9).
@@ -45,6 +47,7 @@ export default function Mostrador() {
   // teclado en pantalla en tablets, algo que solo estorba porque ahí no hay
   // un lector físico escribiendo en ese campo.
   const ultimoPunteroEsTouch = useRef(false)
+  const confirmar = useConfirmacion()
 
   const total = carrito.reduce((suma, item) => suma + item.unit_price * item.quantity, 0)
 
@@ -192,6 +195,17 @@ export default function Mostrador() {
     setCarrito((prev) => prev.filter((i) => i.key !== key))
   }
 
+  async function vaciarVenta() {
+    if (carrito.length === 0) return
+    const ok = await confirmar({
+      titulo: '¿Vaciar la venta actual?',
+      mensaje: `Se van a quitar ${carrito.length} renglón(es) del carrito.`,
+      textoConfirmar: 'Sí, vaciar',
+      peligroso: true
+    })
+    if (ok) setCarrito([])
+  }
+
   // Los tres orígenes posibles (botón, Enter/Espacio, y el propio diálogo
   // reintentando) comparten esta guarda para no abrir dos diálogos ni mandar
   // la venta dos veces.
@@ -272,7 +286,7 @@ export default function Mostrador() {
   }, [populares, carrito, cobrando, dialogoCobroAbierto, ticket])
 
   return (
-    <div>
+    <div className={carrito.length > 0 ? 'max-[900px]:pb-24' : undefined}>
       <h1 className={CLASE_PAGE_TITLE}>Mostrador</h1>
 
       {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
@@ -312,20 +326,28 @@ export default function Mostrador() {
       <div className="grid grid-cols-[1fr_400px] gap-5 items-start max-[900px]:grid-cols-1">
         <div className="min-w-0 flex flex-col gap-4">
           <form onSubmit={alEscanear} className={`${CLASE_CARD} flex gap-[0.6rem]`}>
-            <input
-              ref={inputCodigo}
-              type="text"
-              className="py-[0.9rem] px-4 text-[1.1rem]"
-              placeholder="Escanea el código de barras (o captúralo y presiona Enter)"
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === ' ' && codigo.trim() === '') {
-                  e.preventDefault()
-                  cobrar()
-                }
-              }}
-            />
+            <div className="relative flex-1">
+              <svg
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+                width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+              >
+                <path d="M4 5v14M8 5v14M11 5v14M15 5v14M17 5v14M20 5v14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              <input
+                ref={inputCodigo}
+                type="text"
+                className="!py-[0.9rem] !pl-11 !pr-4 text-[1.1rem]"
+                placeholder="Escanea el código de barras (o captúralo y presiona Enter)"
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === ' ' && codigo.trim() === '') {
+                    e.preventDefault()
+                    cobrar()
+                  }
+                }}
+              />
+            </div>
             <button type="submit" className={`${CLASE_BTN_PRIMARY} px-6 text-base`}>Agregar</button>
           </form>
 
@@ -343,23 +365,22 @@ export default function Mostrador() {
                   return (
                     <button
                       key={p.id}
-                      className="w-40 relative flex items-center gap-[0.6rem] text-left p-[0.6rem] border border-border rounded-[10px] bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                      className="w-40 relative flex flex-col gap-2 text-left p-2 border border-border rounded-2xl bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
                       onPointerDown={alTocarTarjeta}
                       onClick={() => agregarProducto(p)}
                     >
                       {i < TECLAS_ATAJO && (
                         <span
-                          className="absolute -top-2 -left-2 min-w-[22px] h-[22px] px-[5px] rounded-[6px] bg-primary text-white text-xs font-bold flex items-center justify-center shadow-sm border-2 border-surface"
+                          className="absolute top-1.5 left-1.5 z-10 min-w-[22px] h-[22px] px-[5px] rounded-lg bg-primary text-white text-xs font-bold flex items-center justify-center shadow-sm"
                           aria-hidden="true"
                         >
                           {i + 1}
                         </span>
                       )}
-                      <Foto imagePath={p.image_path} alt={p.product_name} />
-                      <span>
-                        <span className="text-[0.82rem] font-semibold leading-[1.25]">{p.product_name}</span>
-                        <br />
-                        <span className="text-[0.82rem] text-primary font-bold">{dinero(unidad?.price)}</span>
+                      <Foto imagePath={p.image_path} alt={p.product_name} grande />
+                      <span className="flex flex-col gap-0.5 px-0.5 pb-0.5">
+                        <span className="text-[0.82rem] font-semibold leading-[1.25] line-clamp-2">{p.product_name}</span>
+                        <span className="text-[0.88rem] text-primary font-bold">{dinero(unidad?.price)}</span>
                       </span>
                     </button>
                   )
@@ -370,18 +391,18 @@ export default function Mostrador() {
 
           <div className={CLASE_CARD}>
             <p className={CLASE_SECCION_TITULO}>Todos los productos</p>
-            <div className="flex gap-[0.6rem] mb-[0.9rem]">
+            <div className="flex flex-col sm:flex-row gap-[0.6rem] mb-[0.9rem]">
               <input
                 type="search"
                 placeholder="Buscar por nombre o precio…"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="flex-1"
+                className="flex-1 min-w-0"
               />
               <select
                 value={categoriaId}
                 onChange={(e) => setCategoriaId(e.target.value)}
-                className="max-w-[220px]"
+                className="sm:max-w-[220px]"
               >
                 <option value="">Todas las categorías</option>
                 {categorias.map((c) => (
@@ -394,21 +415,20 @@ export default function Mostrador() {
                 {busqueda.trim() || categoriaId ? 'Ningún producto coincide con ese filtro.' : 'Todavía no hay productos capturados.'}
               </div>
             ) : (
-              <div className="grid gap-[0.7rem] [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
+              <div className="grid grid-cols-2 gap-[0.7rem] sm:[grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
                 {resultados.map((p) => {
                   const unidad = (p.units ?? []).find((u) => u.is_default) ?? p.units?.[0]
                   return (
                     <button
                       key={p.id}
-                      className="relative flex items-center gap-[0.6rem] text-left p-[0.6rem] border border-border rounded-[10px] bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                      className="relative flex flex-col gap-2 text-left p-2 border border-border rounded-2xl bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
                       onPointerDown={alTocarTarjeta}
                       onClick={() => agregarProducto(p)}
                     >
-                      <Foto imagePath={p.image_path} alt={p.product_name} />
-                      <span>
-                        <span className="text-[0.82rem] font-semibold leading-[1.25]">{p.product_name}</span>
-                        <br />
-                        <span className="text-[0.82rem] text-primary font-bold">{dinero(unidad?.price)}</span>
+                      <Foto imagePath={p.image_path} alt={p.product_name} grande />
+                      <span className="flex flex-col gap-0.5 px-0.5 pb-0.5">
+                        <span className="text-[0.82rem] font-semibold leading-[1.25] line-clamp-2">{p.product_name}</span>
+                        <span className="text-[0.88rem] text-primary font-bold">{dinero(unidad?.price)}</span>
                       </span>
                     </button>
                   )
@@ -419,12 +439,25 @@ export default function Mostrador() {
         </div>
 
         <aside className="sticky top-4 max-[900px]:static">
-          <div className={`${CLASE_CARD} flex flex-col max-h-[calc(100vh-7rem)] max-[900px]:max-h-none`}>
-            <p className={CLASE_SECCION_TITULO}>Venta actual</p>
+          <div className={`${CLASE_CARD} flex flex-col h-[calc(100vh-7rem)] max-[900px]:h-auto`}>
+            <div className="flex items-center justify-between mb-[0.7rem]">
+              <p className={`${CLASE_SECCION_TITULO} m-0`}>Venta actual</p>
+              {carrito.length > 0 && (
+                <button
+                  type="button"
+                  className="text-[0.78rem] font-semibold text-danger cursor-pointer bg-transparent border-none p-0 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  onClick={vaciarVenta}
+                >
+                  Vaciar venta
+                </button>
+              )}
+            </div>
             {carrito.length === 0 ? (
-              <div className={CLASE_EMPTY_STATE}>Escanea o elige un producto para empezar la venta.</div>
+              <div className={`${CLASE_EMPTY_STATE} flex-1 flex items-center justify-center text-center max-[900px]:flex-none max-[900px]:py-8`}>
+                Escanea o elige un producto para empezar la venta.
+              </div>
             ) : (
-              <div className="flex-1 overflow-y-auto -mx-2 px-2 max-[900px]:overflow-y-visible">
+              <div className="flex-1 overflow-y-auto -mx-2 px-2 max-[900px]:overflow-y-visible max-[900px]:flex-none">
                 {carrito.map((item) => (
                   <RenglonCarrito
                     key={item.key}
@@ -453,6 +486,22 @@ export default function Mostrador() {
           </div>
         </aside>
       </div>
+
+      {carrito.length > 0 && (
+        <div className="hidden max-[900px]:flex fixed inset-x-0 bottom-0 z-40 items-center gap-3 bg-surface border-t border-border px-4 py-3 shadow-md">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-text-muted truncate">{carrito.reduce((s, i) => s + i.quantity, 0)} pieza(s)</p>
+            <p className="text-lg font-bold text-primary-dark truncate">{dinero(total)}</p>
+          </div>
+          <button
+            className={`${CLASE_BTN_ACCENT} px-6 py-3 text-base flex-none`}
+            disabled={cobrando}
+            onClick={cobrar}
+          >
+            {cobrando ? 'Cobrando…' : 'Cobrar'}
+          </button>
+        </div>
+      )}
 
       <DialogoCobro
         abierto={dialogoCobroAbierto}
