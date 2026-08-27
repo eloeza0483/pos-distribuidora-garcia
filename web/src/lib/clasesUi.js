@@ -30,6 +30,8 @@ export const CLASE_PILL_ENTRADA = `${CLASE_PILL} bg-success-soft text-success`
 export const CLASE_PILL_SALIDA = `${CLASE_PILL} bg-danger-soft text-danger`
 export const CLASE_PILL_AJUSTE = `${CLASE_PILL} bg-accent-soft text-[#8a5417]`
 export const CLASE_PILL_LOW = `${CLASE_PILL} bg-danger-soft text-danger`
+export const CLASE_PILL_INFO = `${CLASE_PILL} bg-primary-soft text-primary-dark`
+export const CLASE_PILL_CANCELADA = `${CLASE_PILL} bg-danger-soft text-danger`
 
 export const CLASE_FOTO = 'w-11 h-11 rounded-xl object-cover bg-bg border border-border block'
 export const CLASE_FOTO_VACIA = 'w-11 h-11 rounded-xl bg-bg border border-dashed border-border flex items-center justify-center text-text-muted text-[1.1rem]'

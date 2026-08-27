@@ -8,7 +8,7 @@ import { dinero, fecha } from '../lib/formato.js'
 import {
   CLASE_CARD, CLASE_PAGE_TITLE, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE,
   CLASE_BTN_PRIMARY, CLASE_BTN_PELIGRO_SOLIDO, CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES,
-  CLASE_FILA_TACHADA
+  CLASE_PILL_INFO, CLASE_PILL_CANCELADA
 } from '../lib/clasesUi.js'
 
 const NOMBRE_FORMA_PAGO = {
@@ -153,34 +153,27 @@ export default function Ventas() {
             ) : ventas.length === 0 ? (
               <div className={CLASE_EMPTY_STATE}>No hay ventas con ese filtro.</div>
             ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Folio</th>
-                    <th>Hora</th>
-                    <th>Cliente</th>
-                    <th>Renglones</th>
-                    <th>Forma de pago</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ventas.map((v) => (
-                    <tr
-                      key={v.order_id}
-                      className={`cursor-pointer hover:bg-bg ${v.cancelled_at ? CLASE_FILA_TACHADA : ''}`}
-                      onClick={() => abrirDetalle(v.order_id)}
-                    >
-                      <td>#{v.order_id}</td>
-                      <td>{fecha(v.created_at)}</td>
-                      <td>{v.client_name ?? 'Público en General'}</td>
-                      <td>{v.item_count}</td>
-                      <td>{v.payment_method ? NOMBRE_FORMA_PAGO[v.payment_method] ?? v.payment_method : '—'}</td>
-                      <td>{dinero(v.total_amount)}{v.cancelled_at ? ' (cancelada)' : ''}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              ventas.map((v) => (
+                <div
+                  key={v.order_id}
+                  className={`flex items-center gap-3 py-3 border-b border-border last:border-b-0 cursor-pointer hover:bg-bg ${detalle?.order_id === v.order_id ? 'bg-bg' : ''}`}
+                  onClick={() => abrirDetalle(v.order_id)}
+                >
+                  <div className={`flex-1 min-w-0 ${v.cancelled_at ? 'opacity-60 line-through' : ''}`}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-[0.92rem]">#{v.order_id}</span>
+                      <span className={CLASE_PILL_INFO}>
+                        {v.payment_method ? NOMBRE_FORMA_PAGO[v.payment_method] ?? v.payment_method : 'Sin forma de pago'}
+                      </span>
+                      {v.cancelled_at && <span className={CLASE_PILL_CANCELADA}>Cancelada</span>}
+                    </div>
+                    <p className="text-[0.85rem] text-text-muted mt-0.5">
+                      {fecha(v.created_at)} · {v.client_name ?? 'Público en General'} · {v.item_count} renglón{v.item_count === 1 ? '' : 'es'}
+                    </p>
+                  </div>
+                  <span className="flex-none font-bold text-primary-dark">{dinero(v.total_amount)}</span>
+                </div>
+              ))
             )}
           </div>
         </div>
