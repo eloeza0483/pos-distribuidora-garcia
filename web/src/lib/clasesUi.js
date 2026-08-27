@@ -4,7 +4,7 @@ export const CLASE_BTN =
   'border-none rounded-xl py-[0.55rem] px-4 font-semibold text-[0.9rem] cursor-pointer transition-[filter] duration-150 hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 export const CLASE_BTN_PRIMARY = `${CLASE_BTN} bg-primary text-white`
-export const CLASE_BTN_ACCENT = `${CLASE_BTN} bg-accent text-[#241404]`
+export const CLASE_BTN_ACCENT = `${CLASE_BTN} bg-accent text-accent-ink`
 export const CLASE_BTN_GHOST = `${CLASE_BTN} bg-transparent border border-border text-text`
 export const CLASE_BTN_DANGER = `${CLASE_BTN} bg-danger-soft text-danger`
 export const CLASE_BTN_PELIGRO_SOLIDO = `${CLASE_BTN} bg-danger text-white`

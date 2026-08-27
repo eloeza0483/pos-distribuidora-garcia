@@ -13,6 +13,7 @@
 
   --color-accent: #e0b62c;
   --color-accent-soft: #fbf3dd;
+  --color-accent-ink: #241404;
 
   --color-danger: #c0392b;
   --color-danger-soft: #fbeae7;
@@ -41,6 +42,7 @@
 
     --color-accent: #e6c34a;
     --color-accent-soft: #3d3418;
+    --color-accent-ink: #241404;
 
     --color-danger: #e0685a;
     --color-danger-soft: #3a201d;
@@ -68,6 +70,7 @@
 
   --color-accent: #e6c34a;
   --color-accent-soft: #3d3418;
+  --color-accent-ink: #241404;
 
   --color-danger: #e0685a;
   --color-danger-soft: #3a201d;
@@ -93,6 +96,7 @@
 
   --color-accent: var(--color-accent);
   --color-accent-soft: var(--color-accent-soft);
+  --color-accent-ink: var(--color-accent-ink);
 
   --color-danger: var(--color-danger);
   --color-danger-soft: var(--color-danger-soft);

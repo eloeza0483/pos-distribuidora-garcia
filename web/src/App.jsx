@@ -72,7 +72,7 @@ export default function App() {
                   to={item.to}
                   className={({ isActive }) =>
                     'flex-shrink-0 text-white/80 no-underline px-[0.85rem] py-[0.4rem] rounded-full text-sm font-medium transition-colors duration-150 hover:bg-white/10 hover:text-white' +
-                    (isActive ? ' bg-accent text-[#201304] hover:bg-accent hover:text-[#201304]' : '')
+                    (isActive ? ' bg-accent !text-accent-ink hover:bg-accent hover:!text-accent-ink' : '')
                   }
                 >
                   {item.label }
