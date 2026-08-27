@@ -3,7 +3,7 @@ import { api } from '../api/client.js'
 import { mensajeDeError } from '../lib/errores.js'
 import { dinero } from '../lib/formato.js'
 import {
-  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
+  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_ANCHO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
   CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN, CLASE_BTN_GHOST,
   CLASE_BTN_ACCENT, CLASE_BTN_PRIMARY, CLASE_FIELD, CLASE_ERROR_BANNER
 } from '../lib/clasesUi.js'
@@ -105,7 +105,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   return (
     <div className={CLASE_MODAL_FONDO} onClick={onCancelar}>
       <div
-        className={CLASE_MODAL}
+        className={formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cobro-titulo"
@@ -115,96 +115,102 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
 
         {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
 
-        <dl className={CLASE_MODAL_DETALLES}>
-          <div className={CLASE_MODAL_DETALLE}>
-            <dt className="text-text-muted">Renglones</dt>
-            <dd className="m-0 font-semibold text-right">{resumen.renglones}</dd>
-          </div>
-          <div className={CLASE_MODAL_DETALLE}>
-            <dt className="text-text-muted">Piezas</dt>
-            <dd className="m-0 font-semibold text-right">{resumen.piezas}</dd>
-          </div>
-          <div className={CLASE_MODAL_DETALLE}>
-            <dt className="text-text-muted">Total a cobrar</dt>
-            <dd className="m-0 font-semibold text-right">{dinero(total)}</dd>
-          </div>
-        </dl>
+        <div className={formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''}>
+          <div>
+            <dl className={CLASE_MODAL_DETALLES}>
+              <div className={CLASE_MODAL_DETALLE}>
+                <dt className="text-text-muted">Renglones</dt>
+                <dd className="m-0 font-semibold text-right">{resumen.renglones}</dd>
+              </div>
+              <div className={CLASE_MODAL_DETALLE}>
+                <dt className="text-text-muted">Piezas</dt>
+                <dd className="m-0 font-semibold text-right">{resumen.piezas}</dd>
+              </div>
+              <div className={CLASE_MODAL_DETALLE}>
+                <dt className="text-text-muted">Total a cobrar</dt>
+                <dd className="m-0 font-semibold text-right">{dinero(total)}</dd>
+              </div>
+            </dl>
 
-        <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
-          <label className="font-semibold text-text">Forma de pago</label>
-          <div className="flex gap-2 flex-wrap">
-            {FORMAS_PAGO.map((f) => (
-              <button
-                key={f.valor}
-                type="button"
-                className={`${CLASE_BTN} flex-1 min-w-[100px] ${formaPago === f.valor ? CLASE_BTN_PRIMARY : CLASE_BTN_GHOST}`}
-                onClick={() => setFormaPago(f.valor)}
-              >
-                <span className="inline-block min-w-[1.1rem] opacity-70 text-[0.8rem] mr-[0.3rem]">{f.tecla}</span> {f.etiqueta}
-              </button>
-            ))}
-          </div>
-        </div>
+            <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
+              <label className="font-semibold text-text">Forma de pago</label>
+              <div className="flex gap-2 flex-wrap lg:flex-col">
+                {FORMAS_PAGO.map((f) => (
+                  <button
+                    key={f.valor}
+                    type="button"
+                    className={`${CLASE_BTN} flex-1 min-w-[100px] lg:w-full lg:text-left ${formaPago === f.valor ? CLASE_BTN_PRIMARY : CLASE_BTN_GHOST}`}
+                    onClick={() => setFormaPago(f.valor)}
+                  >
+                    <span className="inline-block min-w-[1.1rem] opacity-70 text-[0.8rem] mr-[0.3rem]">{f.tecla}</span> {f.etiqueta}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        {formaPago === 'efectivo' && (
-          <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
-            <div className="flex items-center justify-between">
-              <label htmlFor="cobro-efectivo" className="font-semibold text-text">Con cuánto paga</label>
-              {efectivoRecibido !== '' && (
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-text-muted hover:text-primary underline-offset-2 hover:underline"
-                  onClick={() => setEfectivoRecibido('')}
-                >
-                  Limpiar
-                </button>
-              )}
+            <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
+              <label htmlFor="cobro-cliente" className="font-semibold text-text">Cliente</label>
+              <select id="cobro-cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+                {clientes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.client_name}</option>
+                ))}
+              </select>
             </div>
-            <input
-              id="cobro-efectivo"
-              ref={inputEfectivo}
-              type="number"
-              min="0"
-              step="any"
-              value={efectivoRecibido}
-              onChange={(e) => setEfectivoRecibido(e.target.value)}
-            />
-            <div className="flex gap-2 flex-wrap mt-2">
-              {BILLETES.map(({ valor, imagen }) => (
-                <button
-                  key={valor}
-                  type="button"
-                  onClick={() => agregarBillete(valor)}
-                  aria-label={`Agregar billete de ${dinero(valor)}`}
-                  className="group flex flex-col items-center gap-1 rounded-xl border border-border bg-surface p-1.5 cursor-pointer transition-[border-color,box-shadow,transform] duration-150 hover:border-primary hover:shadow-sm active:scale-95"
-                >
-                  <img
-                    src={imagen}
-                    alt={`Billete de ${dinero(valor)}`}
-                    className="w-24 aspect-[2.85] object-cover object-center rounded-sm bg-bg"
-                    draggable="false"
-                  />
-                  <span className="text-[0.7rem] font-semibold text-text-muted [font-variant-numeric:tabular-nums] group-hover:text-primary">
-                    {dinero(valor)}
-                  </span>
-                </button>
-              ))}
-            </div>
-            {efectivoRecibido !== '' && (
-              <p className={`m-0 mt-[0.4rem] text-[1.4rem] font-bold ${efectivoInsuficiente ? 'text-danger' : 'text-success'}`}>
-                {efectivoInsuficiente ? 'Falta ' + dinero(total - Number(efectivoRecibido)) : `Cambio: ${dinero(cambio)}`}
-              </p>
+          </div>
+
+          <div>
+            {formaPago === 'efectivo' && (
+              <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="cobro-efectivo" className="font-semibold text-text">Con cuánto paga</label>
+                  {efectivoRecibido !== '' && (
+                    <button
+                      type="button"
+                      className="text-xs font-semibold text-text-muted hover:text-primary underline-offset-2 hover:underline"
+                      onClick={() => setEfectivoRecibido('')}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+                <input
+                  id="cobro-efectivo"
+                  ref={inputEfectivo}
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={efectivoRecibido}
+                  onChange={(e) => setEfectivoRecibido(e.target.value)}
+                />
+                <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 mt-2">
+                  {BILLETES.map(({ valor, imagen }) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => agregarBillete(valor)}
+                      aria-label={`Agregar billete de ${dinero(valor)}`}
+                      className="group flex flex-col items-center gap-1 rounded-xl border border-border bg-surface p-1.5 cursor-pointer transition-[border-color,box-shadow,transform] duration-150 hover:border-primary hover:shadow-sm active:scale-95"
+                    >
+                      <img
+                        src={imagen}
+                        alt={`Billete de ${dinero(valor)}`}
+                        className="w-full aspect-[2.85] object-cover object-center rounded-sm bg-bg"
+                        draggable="false"
+                      />
+                      <span className="text-[0.7rem] font-semibold text-text-muted [font-variant-numeric:tabular-nums] group-hover:text-primary">
+                        {dinero(valor)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {efectivoRecibido !== '' && (
+                  <p className={`m-0 mt-[0.4rem] text-[1.4rem] font-bold ${efectivoInsuficiente ? 'text-danger' : 'text-success'}`}>
+                    {efectivoInsuficiente ? 'Falta ' + dinero(total - Number(efectivoRecibido)) : `Cambio: ${dinero(cambio)}`}
+                  </p>
+                )}
+              </div>
             )}
           </div>
-        )}
-
-        <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
-          <label htmlFor="cobro-cliente" className="font-semibold text-text">Cliente</label>
-          <select id="cobro-cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-            {clientes.map((c) => (
-              <option key={c.id} value={c.id}>{c.client_name}</option>
-            ))}
-          </select>
         </div>
 
         <div className={CLASE_MODAL_ACCIONES}>

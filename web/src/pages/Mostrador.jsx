@@ -323,7 +323,7 @@ export default function Mostrador() {
         </div>
       )}
 
-      <div className="grid grid-cols-[1fr_400px] gap-5 items-start max-[900px]:grid-cols-1">
+      <div className="grid grid-cols-[1fr_400px] gap-5 items-start mb-6 max-[900px]:grid-cols-1 max-[900px]:mb-0">
         <div className="min-w-0 flex flex-col gap-4">
           <form onSubmit={alEscanear} className={`${CLASE_CARD} flex gap-[0.6rem]`}>
             <div className="relative flex-1">
@@ -359,32 +359,35 @@ export default function Mostrador() {
             {populares.length === 0 ? (
               <div className={CLASE_EMPTY_STATE}>Todavía no hay historial de ventas.</div>
             ) : (
-              <div className="grid [grid-auto-flow:column] [grid-template-rows:repeat(2,auto)] [grid-auto-columns:160px] gap-[0.7rem] overflow-x-auto pt-[0.3rem] px-[0.2rem] pb-[0.6rem]">
-                {populares.map((p, i) => {
-                  const unidad = (p.units ?? []).find((u) => u.is_default) ?? p.units?.[0]
-                  return (
-                    <button
-                      key={p.id}
-                      className="w-40 relative flex flex-col gap-2 text-left p-2 border border-border rounded-2xl bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
-                      onPointerDown={alTocarTarjeta}
-                      onClick={() => agregarProducto(p)}
-                    >
-                      {i < TECLAS_ATAJO && (
-                        <span
-                          className="absolute top-1.5 left-1.5 z-10 min-w-[22px] h-[22px] px-[5px] rounded-lg bg-primary text-white text-xs font-bold flex items-center justify-center shadow-sm"
-                          aria-hidden="true"
-                        >
-                          {i + 1}
+              <div className="relative">
+                <div className="scroll-fina snap-x snap-mandatory scroll-smooth grid items-start [grid-auto-flow:column] [grid-template-rows:repeat(2,auto)] [grid-auto-columns:clamp(130px,50vh_-_16.5rem,200px)] gap-3 overflow-x-auto pt-[0.3rem] pl-[0.2rem] pr-6 pb-3">
+                  {populares.map((p, i) => {
+                    const unidad = (p.units ?? []).find((u) => u.is_default) ?? p.units?.[0]
+                    return (
+                      <button
+                        key={p.id}
+                        className="snap-start w-[clamp(130px,50vh_-_16.5rem,200px)] relative flex flex-col gap-2 text-left p-2.5 border border-border rounded-2xl bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                        onPointerDown={alTocarTarjeta}
+                        onClick={() => agregarProducto(p)}
+                      >
+                        {i < TECLAS_ATAJO && (
+                          <span
+                            className="absolute top-1.5 left-1.5 z-10 min-w-[22px] h-[22px] px-[5px] rounded-lg bg-primary text-white text-xs font-bold flex items-center justify-center shadow-sm"
+                            aria-hidden="true"
+                          >
+                            {i + 1}
+                          </span>
+                        )}
+                        <Foto imagePath={p.image_path} alt={p.product_name} grande />
+                        <span className="flex flex-col gap-1 px-0.5 pb-0.5">
+                          <span className="text-[0.9rem] font-semibold leading-[1.25] line-clamp-2">{p.product_name}</span>
+                          <span className="text-[0.98rem] text-primary font-bold">{dinero(unidad?.price)}</span>
                         </span>
-                      )}
-                      <Foto imagePath={p.image_path} alt={p.product_name} grande />
-                      <span className="flex flex-col gap-0.5 px-0.5 pb-0.5">
-                        <span className="text-[0.82rem] font-semibold leading-[1.25] line-clamp-2">{p.product_name}</span>
-                        <span className="text-[0.88rem] text-primary font-bold">{dinero(unidad?.price)}</span>
-                      </span>
-                    </button>
-                  )
-                })}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="pointer-events-none absolute right-0 top-0 bottom-3 w-10 bg-gradient-to-l from-surface to-transparent" aria-hidden="true" />
               </div>
             )}
           </div>
@@ -438,8 +441,8 @@ export default function Mostrador() {
           </div>
         </div>
 
-        <aside className="sticky top-4 max-[900px]:static">
-          <div className={`${CLASE_CARD} flex flex-col h-[calc(100vh-7rem)] max-[900px]:h-auto`}>
+        <aside className="sticky top-4 mb-6 max-[900px]:static max-[900px]:mb-0">
+          <div className={`${CLASE_CARD} flex flex-col h-[calc(100vh-8.75rem)] max-[900px]:h-auto`}>
             <div className="flex items-center justify-between mb-[0.7rem]">
               <p className={`${CLASE_SECCION_TITULO} m-0`}>Venta actual</p>
               {carrito.length > 0 && (
@@ -457,7 +460,7 @@ export default function Mostrador() {
                 Escanea o elige un producto para empezar la venta.
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto -mx-2 px-2 max-[900px]:overflow-y-visible max-[900px]:flex-none">
+              <div className="scroll-fina flex-1 overflow-y-auto -mx-2 px-2 max-[900px]:overflow-y-visible max-[900px]:flex-none">
                 {carrito.map((item) => (
                   <RenglonCarrito
                     key={item.key}
