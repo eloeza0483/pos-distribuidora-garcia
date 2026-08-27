@@ -276,18 +276,27 @@ export default function Productos() {
       {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
       {aviso && <div className={`${CLASE_CARD} mb-4 border-success`}>{aviso}</div>}
 
-      <form onSubmit={alBuscar} className={`${CLASE_CARD} mb-5 flex gap-[0.6rem]`}>
-        <input
-          type="search"
-          placeholder="Buscar por nombre, código de barras o precio…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="flex-1"
-        />
+      <form onSubmit={alBuscar} className={`${CLASE_CARD} mb-5 flex flex-col sm:flex-row gap-[0.6rem]`}>
+        <div className="relative flex-1">
+          <svg
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+            width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+            <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            placeholder="Buscar por nombre, código de barras o precio…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="!pl-9"
+          />
+        </div>
         <select
           value={filtroCategoria}
           onChange={(e) => alCambiarFiltroCategoria(e.target.value)}
-          className="max-w-[200px]"
+          className="sm:max-w-[200px]"
         >
           <option value="">Todas las categorías</option>
           {categorias.map((c) => (
@@ -301,7 +310,7 @@ export default function Productos() {
         <summary className="cursor-pointer font-semibold text-primary-dark">
           Dar de alta un producto nuevo
         </summary>
-        <form onSubmit={crearProducto} className="mt-4 grid grid-cols-5 gap-3 items-start">
+        <form onSubmit={crearProducto} className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-start">
           <label className={CLASE_FIELD}>
             Nombre
             <input
@@ -355,162 +364,144 @@ export default function Productos() {
         </p>
       </details>
 
-      <div className={CLASE_CARD}>
-        {cargando ? (
-          <div className={CLASE_EMPTY_STATE}>Cargando…</div>
-        ) : productos.length === 0 ? (
-          <div className={CLASE_EMPTY_STATE}>Ningún producto coincide con esa búsqueda.</div>
-        ) : (
-          grupos.map((grupo) => (
-            <div key={grupo.nombre} className="mb-6">
-              <p className={CLASE_SECCION_TITULO}>{grupo.nombre} · {grupo.productos.length}</p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Foto</th>
-                    <th>Producto</th>
-                    <th>Precio por pieza</th>
-                    <th>Existencia</th>
-                    <th>Categoría</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {grupo.productos.map((p) => (
-                    <Fragment key={p.id}>
-                      <tr>
-                        <td className="w-[60px]">
-                          <ControlFoto producto={p} onSubir={subirFoto} onQuitar={quitarFoto} />
-                        </td>
-                        <td>{p.product_name}</td>
-                        <td>{dinero(p.list_price)}</td>
-                        <td>
-                          {piezas(p.stock_base)}
-                          {p.low_stock && <span className={`${CLASE_PILL_LOW} ml-2`}>bajo</span>}
-                        </td>
-                        <td className="min-w-[160px]">
-                          <SelectorCategoria
-                            categorias={categorias}
-                            value={p.category_id}
-                            onChange={(categoryId) => cambiarCategoria(p, categoryId)}
-                            onCrear={crearCategoria}
-                          />
-                        </td>
-                        <td>
-                          <button className={CLASE_BTN_GHOST} onClick={() => setExpandido(expandido === p.id ? null : p.id)}>
-                            {expandido === p.id ? 'Ocultar' : 'Presentaciones'}
-                          </button>
-                        </td>
-                      </tr>
-                      {expandido === p.id && (
-                        <tr>
-                          <td colSpan={6} className="bg-bg">
-                            <table>
-                              <thead>
-                                <tr>
-                                  <th>Presentación</th>
-                                  <th>Precio</th>
-                                  <th>Piezas que trae</th>
-                                  <th>Código de barras</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {(p.units || []).map((u) => (
-                                  <tr key={u.id}>
-                                    <td>{u.unit_label}{u.is_default ? ' (se vende suelta)' : ''}</td>
-                                    <td>{dinero(u.price)}</td>
-                                    <td>
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        step="any"
-                                        defaultValue={u.base_qty ?? ''}
-                                        placeholder={preguntaPiezasQueTrae(u.unit_label)}
-                                        title={preguntaPiezasQueTrae(u.unit_label)}
-                                        onBlur={(e) => {
-                                          const valor = Number(e.target.value)
-                                          if (valor > 0 && valor !== u.base_qty) {
-                                            editarUnidad(p, u, 'base_qty', valor, [
-                                              { etiqueta: 'Piezas que trae', valor: `${u.base_qty ?? '—'} → ${valor}` }
-                                            ])
-                                          }
-                                        }}
-                                      />
-                                    </td>
-                                    <td>
-                                      <input
-                                        type="text"
-                                        defaultValue={u.barcode ?? ''}
-                                        placeholder="Escanea aquí para asignarlo"
-                                        onBlur={(e) => {
-                                          const valor = e.target.value.trim()
-                                          if (valor !== (u.barcode ?? '')) {
-                                            editarUnidad(p, u, 'barcode', valor || null, [
-                                              { etiqueta: 'Código de barras', valor: valor || 'sin código' }
-                                            ])
-                                          }
-                                        }}
-                                      />
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+      {cargando ? (
+        <div className={CLASE_CARD}><div className={CLASE_EMPTY_STATE}>Cargando…</div></div>
+      ) : productos.length === 0 ? (
+        <div className={CLASE_CARD}><div className={CLASE_EMPTY_STATE}>Ningún producto coincide con esa búsqueda.</div></div>
+      ) : (
+        grupos.map((grupo) => (
+          <div key={grupo.nombre} className={`${CLASE_CARD} mb-4`}>
+            <p className={CLASE_SECCION_TITULO}>{grupo.nombre} · {grupo.productos.length}</p>
+            {grupo.productos.map((p) => (
+              <Fragment key={p.id}>
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 py-3 border-b border-border last:border-b-0">
+                  <ControlFoto producto={p} onSubir={subirFoto} onQuitar={quitarFoto} />
+                  <div className="flex-1 min-w-[160px]">
+                    <p className="font-semibold text-[0.92rem] leading-[1.25]">{p.product_name}</p>
+                    <p className="flex items-center gap-2 flex-wrap text-[0.85rem] text-text-muted mt-0.5">
+                      <span className="text-primary font-bold">{dinero(p.list_price)}</span>
+                      <span>· {piezas(p.stock_base)}</span>
+                      {p.low_stock && <span className={CLASE_PILL_LOW}>bajo</span>}
+                    </p>
+                  </div>
+                  <div className="w-full sm:w-auto flex items-center gap-3">
+                    <div className="flex-1 sm:flex-none sm:w-[190px]">
+                      <SelectorCategoria
+                        categorias={categorias}
+                        value={p.category_id}
+                        onChange={(categoryId) => cambiarCategoria(p, categoryId)}
+                        onCrear={crearCategoria}
+                      />
+                    </div>
+                    <button
+                      className={`${CLASE_BTN_GHOST} flex-none`}
+                      aria-expanded={expandido === p.id}
+                      onClick={() => setExpandido(expandido === p.id ? null : p.id)}
+                    >
+                      {expandido === p.id ? 'Ocultar' : 'Presentaciones'}
+                    </button>
+                  </div>
+                </div>
+                {expandido === p.id && (
+                  <div className="bg-bg rounded-xl p-4 mb-3">
+                    <div className="flex flex-col gap-3 mb-3">
+                      {(p.units || []).map((u) => (
+                        <div key={u.id} className="flex flex-wrap items-center gap-3 pb-3 border-b border-border last:border-b-0 last:pb-0">
+                          <span className="font-medium text-[0.88rem] min-w-[110px]">
+                            {u.unit_label}{u.is_default ? ' (se vende suelta)' : ''}
+                          </span>
+                          <span className="text-primary font-semibold text-[0.88rem] min-w-[70px]">{dinero(u.price)}</span>
+                          <label className="flex items-center gap-1.5 text-[0.8rem] text-text-muted">
+                            Piezas que trae
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              defaultValue={u.base_qty ?? ''}
+                              placeholder={preguntaPiezasQueTrae(u.unit_label)}
+                              title={preguntaPiezasQueTrae(u.unit_label)}
+                              className="!w-24"
+                              onBlur={(e) => {
+                                const valor = Number(e.target.value)
+                                if (valor > 0 && valor !== u.base_qty) {
+                                  editarUnidad(p, u, 'base_qty', valor, [
+                                    { etiqueta: 'Piezas que trae', valor: `${u.base_qty ?? '—'} → ${valor}` }
+                                  ])
+                                }
+                              }}
+                            />
+                          </label>
+                          <label className="flex items-center gap-1.5 flex-1 min-w-[180px] text-[0.8rem] text-text-muted">
+                            Código
+                            <input
+                              type="text"
+                              defaultValue={u.barcode ?? ''}
+                              placeholder="Escanea aquí para asignarlo"
+                              className="flex-1"
+                              onBlur={(e) => {
+                                const valor = e.target.value.trim()
+                                if (valor !== (u.barcode ?? '')) {
+                                  editarUnidad(p, u, 'barcode', valor || null, [
+                                    { etiqueta: 'Código de barras', valor: valor || 'sin código' }
+                                  ])
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      ))}
+                    </div>
 
-                            <p className={`${CLASE_AYUDA} mt-[0.9rem]`}>
-                              Una presentación es cómo viene empaquetado el producto. Si un bulto trae 50 piezas,
-                              escribe 50 en «Piezas que trae»: con eso el sistema sabe cuánto descontar del inventario.
-                            </p>
+                    <p className={CLASE_AYUDA}>
+                      Una presentación es cómo viene empaquetado el producto. Si un bulto trae 50 piezas,
+                      escribe 50 en «Piezas que trae»: con eso el sistema sabe cuánto descontar del inventario.
+                    </p>
 
-                            <div className="grid grid-cols-[repeat(4,1fr)_auto] gap-[0.6rem] mt-2 items-start">
-                              <label className={CLASE_FIELD}>
-                                Nueva presentación
-                                <SelectorPresentacion
-                                  value={formularioUnidad(p.id).unit_label}
-                                  onChange={(valor) => actualizarFormularioUnidad(p.id, 'unit_label', valor)}
-                                />
-                              </label>
-                              <label className={CLASE_FIELD}>
-                                Precio
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={formularioUnidad(p.id).price}
-                                  onChange={(e) => actualizarFormularioUnidad(p.id, 'price', e.target.value)}
-                                />
-                              </label>
-                              <label className={CLASE_FIELD}>
-                                Piezas que trae
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="any"
-                                  value={formularioUnidad(p.id).base_qty}
-                                  onChange={(e) => actualizarFormularioUnidad(p.id, 'base_qty', e.target.value)}
-                                />
-                              </label>
-                              <label className={CLASE_FIELD}>
-                                Código de barras
-                                <input
-                                  type="text"
-                                  value={formularioUnidad(p.id).barcode}
-                                  onChange={(e) => actualizarFormularioUnidad(p.id, 'barcode', e.target.value)}
-                                />
-                              </label>
-                              <button className={CLASE_BTN_ACCENT} onClick={() => agregarUnidad(p)}>Agregar</button>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
-        )}
-      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(4,1fr)_auto] gap-3 mt-3 items-start">
+                      <label className={CLASE_FIELD}>
+                        Nueva presentación
+                        <SelectorPresentacion
+                          value={formularioUnidad(p.id).unit_label}
+                          onChange={(valor) => actualizarFormularioUnidad(p.id, 'unit_label', valor)}
+                        />
+                      </label>
+                      <label className={CLASE_FIELD}>
+                        Precio
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formularioUnidad(p.id).price}
+                          onChange={(e) => actualizarFormularioUnidad(p.id, 'price', e.target.value)}
+                        />
+                      </label>
+                      <label className={CLASE_FIELD}>
+                        Piezas que trae
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={formularioUnidad(p.id).base_qty}
+                          onChange={(e) => actualizarFormularioUnidad(p.id, 'base_qty', e.target.value)}
+                        />
+                      </label>
+                      <label className={CLASE_FIELD}>
+                        Código de barras
+                        <input
+                          type="text"
+                          value={formularioUnidad(p.id).barcode}
+                          onChange={(e) => actualizarFormularioUnidad(p.id, 'barcode', e.target.value)}
+                        />
+                      </label>
+                      <button className={`${CLASE_BTN_ACCENT} justify-self-start lg:justify-self-auto`} onClick={() => agregarUnidad(p)}>Agregar</button>
+                    </div>
+                  </div>
+                )}
+              </Fragment>
+            ))}
+          </div>
+        ))
+      )}
     </div>
   )
 }

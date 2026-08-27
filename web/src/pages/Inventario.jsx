@@ -8,7 +8,7 @@ import {
 import {
   CLASE_CARD, CLASE_PAGE_TITLE, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE,
   CLASE_AYUDA, CLASE_BTN_PRIMARY, CLASE_BTN_DANGER, CLASE_PILL_ENTRADA, CLASE_PILL_SALIDA,
-  CLASE_PILL_AJUSTE, CLASE_FILA_TACHADA
+  CLASE_PILL_AJUSTE
 } from '../lib/clasesUi.js'
 
 const CLASES_PILL_TIPO = {
@@ -174,7 +174,7 @@ export default function Inventario() {
       {aviso && <div className={`${CLASE_CARD} mb-4 border-success`}>{aviso}</div>}
 
       <form onSubmit={alEnviar} className={`${CLASE_CARD} mb-5`}>
-        <div className="grid grid-cols-5 gap-3 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
           <label className={CLASE_FIELD}>
             Producto
             <select value={form.product_id} onChange={(e) => actualizarCampo('product_id', e.target.value)} required>
@@ -253,44 +253,34 @@ export default function Inventario() {
         ) : movimientos.length === 0 ? (
           <div className={CLASE_EMPTY_STATE}>Todavía no hay movimientos registrados.</div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Producto</th>
-                <th>¿Qué pasó?</th>
-                <th>Cantidad</th>
-                <th>Existencia después</th>
-                <th>Motivo</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {movimientos.map((m) => {
-                const impedimento = motivoNoSePuedeDeshacer(m)
-                return (
-                  <tr key={m.id} className={m.is_reverted ? CLASE_FILA_TACHADA : undefined}>
-                    <td>{fecha(m.created_at)}</td>
-                    <td>{m.product_name}</td>
-                    <td><span className={CLASES_PILL_TIPO[m.type]}>{etiquetaTipo(m.type)}</span></td>
-                    <td>{m.quantity} {m.unit_label || 'pieza'}</td>
-                    <td>{piezas(m.stock_after)}</td>
-                    <td>{m.reason || '—'}</td>
-                    <td>
-                      <button
-                        className={CLASE_BTN_DANGER}
-                        onClick={() => deshacer(m)}
-                        disabled={impedimento !== null}
-                        title={impedimento ?? 'Registra el movimiento contrario'}
-                      >
-                        Deshacer
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          movimientos.map((m) => {
+            const impedimento = motivoNoSePuedeDeshacer(m)
+            return (
+              <div
+                key={m.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 py-3 border-b border-border last:border-b-0"
+              >
+                <div className={`flex-1 min-w-0 ${m.is_reverted ? 'opacity-60 line-through' : ''}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={CLASES_PILL_TIPO[m.type]}>{etiquetaTipo(m.type)}</span>
+                    <span className="font-semibold text-[0.92rem]">{m.product_name}</span>
+                  </div>
+                  <p className="text-[0.85rem] text-text-muted mt-0.5">
+                    {fecha(m.created_at)} · {m.quantity} {m.unit_label || 'pieza'} · queda {piezas(m.stock_after)}
+                  </p>
+                  {m.reason && <p className="text-[0.85rem] text-text-muted italic mt-0.5">{m.reason}</p>}
+                </div>
+                <button
+                  className={`${CLASE_BTN_DANGER} flex-none self-start sm:self-auto`}
+                  onClick={() => deshacer(m)}
+                  disabled={impedimento !== null}
+                  title={impedimento ?? 'Registra el movimiento contrario'}
+                >
+                  Deshacer
+                </button>
+              </div>
+            )
+          })
         )}
       </div>
     </div>
