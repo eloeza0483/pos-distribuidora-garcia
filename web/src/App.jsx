@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import Mostrador from './pages/Mostrador.jsx'
 import Inventario from './pages/Inventario.jsx'
@@ -21,6 +21,53 @@ const OPCIONES_TEMA = [
   { valor: 'light', icono: '☀︎', etiqueta: 'Claro' },
   { valor: 'dark', icono: '☾', etiqueta: 'Oscuro' }
 ]
+
+// Señala con un degradado que hay más destinos fuera de vista cuando el nav
+// se desborda (pantallas angostas), ya que ahí no hay scrollbar visible.
+function NavPrincipal() {
+  const navRef = useRef(null)
+  const [hayMasNav, setHayMasNav] = useState(false)
+
+  useEffect(() => {
+    const el = navRef.current
+    if (!el) return
+    function actualizar() {
+      setHayMasNav(el.scrollWidth - el.scrollLeft - el.clientWidth > 4)
+    }
+    actualizar()
+    el.addEventListener('scroll', actualizar)
+    window.addEventListener('resize', actualizar)
+    return () => {
+      el.removeEventListener('scroll', actualizar)
+      window.removeEventListener('resize', actualizar)
+    }
+  }, [])
+
+  return (
+    <div className="relative min-w-0 mr-auto">
+      <nav ref={navRef} className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              'flex-shrink-0 text-white/80 no-underline px-[0.85rem] py-[0.4rem] rounded-full text-sm font-medium transition-colors duration-150 hover:bg-white/10 hover:text-white' +
+              (isActive ? ' bg-accent !text-accent-ink hover:bg-accent hover:!text-accent-ink' : '')
+            }
+          >
+            {item.label }
+          </NavLink>
+        ))}
+      </nav>
+      {hayMasNav && (
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-r from-transparent to-primary"
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  )
+}
 
 function BotonTema() {
   const [tema, setTema] = useState(() => obtenerTemaGuardado())
@@ -65,20 +112,7 @@ export default function App() {
                 <span className="text-[0.58rem] font-semibold tracking-wide text-white/75 -mt-0.5 hidden sm:block">venta de desechables y bolsas</span>
               </span>
             </NavLink>
-            <nav className="flex gap-1 mr-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    'flex-shrink-0 text-white/80 no-underline px-[0.85rem] py-[0.4rem] rounded-full text-sm font-medium transition-colors duration-150 hover:bg-white/10 hover:text-white' +
-                    (isActive ? ' bg-accent !text-accent-ink hover:bg-accent hover:!text-accent-ink' : '')
-                  }
-                >
-                  {item.label }
-                </NavLink>
-              ))}
-            </nav>
+            <NavPrincipal />
             <BotonTema />
           </header>
           <main className="flex-1 p-6 max-w-[1400px] w-full mx-auto">
