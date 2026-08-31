@@ -5,13 +5,17 @@ import { useConfirmacion } from '../components/Confirmacion.jsx'
 import DialogoCobro from '../components/DialogoCobro.jsx'
 import Ticket from '../components/Ticket.jsx'
 import { imprimirTicket } from '../lib/imprimir.js'
+import { imprimirTicketApp } from '../lib/imprimirEscBridge.js'
 import { dinero } from '../lib/formato.js'
+import { esPunteroTactil, esAndroid } from '../lib/dispositivo.js'
+import { useEscaner, MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
 import {
   CLASE_PAGE_TITLE, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE, CLASE_CARD, CLASE_AYUDA,
   CLASE_SECCION_TITULO, CLASE_BTN_PRIMARY, CLASE_BTN_ACCENT, CLASE_BTN_DANGER,
   CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_FOTO_GRANDE, CLASE_FOTO_GRANDE_VACIA,
   CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES,
-  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_CERRAR
+  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_CERRAR,
+  CLASE_CHIP_FILTRO, CLASE_CHIP_FILTRO_ACTIVO
 } from '../lib/clasesUi.js'
 
 function nuevaClaveIdempotencia() {
@@ -47,12 +51,14 @@ export default function Mostrador() {
   // teclado en pantalla en tablets, algo que solo estorba porque ahí no hay
   // un lector físico escribiendo en ese campo.
   const ultimoPunteroEsTouch = useRef(false)
+  const atajoPendiente = useRef(null)
+  const [esTactil] = useState(esPunteroTactil)
   const confirmar = useConfirmacion()
 
   const total = carrito.reduce((suma, item) => suma + item.unit_price * item.quantity, 0)
 
   useEffect(() => {
-    inputCodigo.current?.focus()
+    if (!esPunteroTactil()) inputCodigo.current?.focus()
     api.products.populares({ limit: 16, days: 30 })
       .then(setPopulares)
       .catch((err) => setError(mensajeDeError(err)))
@@ -97,15 +103,9 @@ export default function Mostrador() {
     })
   }, [])
 
-  // Campo de código vacío: Enter (o Espacio) ya no tiene nada que buscar, así
-  // que se interpreta como "terminé de escanear, cobra".
-  async function alEscanear(e) {
-    e.preventDefault()
-    const valor = codigo.trim()
-    if (!valor) {
-      cobrar()
-      return
-    }
+  // Busca un código de barras y lo mete al carrito. Lo comparten el formulario
+  // visible (PC) y el lector global (tablet, donde nada tiene el foco).
+  const buscarYAgregar = useCallback(async (valor) => {
     setError(null)
     try {
       const encontrado = await api.scan(valor)
@@ -125,9 +125,28 @@ export default function Mostrador() {
       } else {
         setError(mensajeDeError(err))
       }
-    } finally {
-      setCodigo('')
     }
+  }, [agregarAlCarrito])
+
+  // La pistola teclea el código dondequiera que esté el foco. Con el diálogo
+  // de cobro abierto la ráfaga se traga igual (para que no cambie la forma de
+  // pago ni confirme la venta), pero no se busca nada.
+  const { escaneoEnCurso, teclasVistas } = useEscaner({
+    onCodigo: buscarYAgregar,
+    activo: !dialogoCobroAbierto
+  })
+
+  // Campo de código vacío: Enter (o Espacio) ya no tiene nada que buscar, así
+  // que se interpreta como "terminé de escanear, cobra".
+  async function alEscanear(e) {
+    e.preventDefault()
+    const valor = codigo.trim()
+    if (!valor) {
+      cobrar()
+      return
+    }
+    setCodigo('')
+    await buscarYAgregar(valor)
   }
 
   // Al elegir a mano se agrega con la presentación de venta normal; la unidad
@@ -245,7 +264,7 @@ export default function Mostrador() {
       setError(mensajeDeError(err))
     } finally {
       setCobrando(false)
-      inputCodigo.current?.focus()
+      if (!esPunteroTactil()) inputCodigo.current?.focus()
     }
   }
 
@@ -253,7 +272,8 @@ export default function Mostrador() {
   // posición de "Más vendidos"; Enter o Espacio cobran. Se ignoran mientras se
   // está escribiendo en un campo (para no chocar con el escaneo, que también
   // llega por teclado) o mientras hay una confirmación abierta (que ya tiene
-  // sus propios atajos de Enter/Escape).
+  // sus propios atajos de Enter/Escape). En táctil no existen: ahí no hay
+  // teclado físico y los dígitos solo pueden venir de la pistola.
   useEffect(() => {
     function alTecla(e) {
       if (e.key === 'Escape' && ticket) {
@@ -267,23 +287,42 @@ export default function Mostrador() {
       const enCampo = activo instanceof HTMLElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activo.tagName)
       const enBoton = activo instanceof HTMLElement && activo.tagName === 'BUTTON'
 
+      if (atajoPendiente.current) {
+        clearTimeout(atajoPendiente.current)
+        atajoPendiente.current = null
+      }
+
       if ((e.key === ' ' || e.key === 'Enter') && !enCampo && !enBoton) {
+        if (escaneoEnCurso()) return
         e.preventDefault()
         cobrar()
         return
       }
 
-      if (enCampo) return
+      if (enCampo || esTactil) return
       if (/^[1-9]$/.test(e.key)) {
         const producto = populares[Number(e.key) - 1]
         if (!producto) return
         e.preventDefault()
-        agregarProducto(producto, { refocus: false })
+        // El primer dígito de un código de barras es indistinguible de un
+        // atajo tecleado a mano, así que se espera un instante: si para
+        // entonces el lector ya acumuló más teclas, la tecla no era un atajo.
+        // El resto de la ráfaga ni siquiera llega hasta aquí (el lector la
+        // corta), por eso no basta con cancelar al recibir la tecla siguiente.
+        const marca = teclasVistas()
+        atajoPendiente.current = setTimeout(() => {
+          atajoPendiente.current = null
+          if (teclasVistas() !== marca) return
+          agregarProducto(producto, { refocus: false })
+        }, MS_ENTRE_TECLAS)
       }
     }
     window.addEventListener('keydown', alTecla)
-    return () => window.removeEventListener('keydown', alTecla)
-  }, [populares, carrito, cobrando, dialogoCobroAbierto, ticket])
+    return () => {
+      window.removeEventListener('keydown', alTecla)
+      if (atajoPendiente.current) clearTimeout(atajoPendiente.current)
+    }
+  }, [populares, carrito, cobrando, dialogoCobroAbierto, ticket, esTactil, escaneoEnCurso, teclasVistas])
 
   return (
     <div className={carrito.length > 0 ? 'max-[900px]:pb-24' : undefined}>
@@ -294,7 +333,7 @@ export default function Mostrador() {
       {ticket && (
         <div className={CLASE_MODAL_FONDO} onClick={() => setTicket(null)}>
           <div
-            className={`${CLASE_MODAL} relative max-w-[480px] max-h-[85vh] overflow-y-auto`}
+            className={`${CLASE_MODAL} relative max-w-[480px] max-h-[85vh] flex flex-col overflow-hidden`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="ticket-titulo"
@@ -308,16 +347,21 @@ export default function Mostrador() {
             >
               ×
             </button>
-            <p id="ticket-titulo" className={`${CLASE_SECCION_TITULO} m-0`}>Venta #{ticket.folio} cobrada</p>
-            <div className={CLASE_PANEL_TICKET}>
+            <p id="ticket-titulo" className={`${CLASE_SECCION_TITULO} m-0 shrink-0`}>Venta #{ticket.folio} cobrada</p>
+            <div className={`${CLASE_PANEL_TICKET} flex-1 min-h-0 overflow-y-auto`}>
               <div id="area-impresion">
                 <Ticket ticket={ticket} />
               </div>
-              <div className={CLASE_PANEL_TICKET_ACCIONES}>
-                <button className={CLASE_BTN_PRIMARY} onClick={() => { imprimirTicket(ticket.ancho_mm); setYaImprimio(true) }}>
-                  {yaImprimio ? 'Imprimir de nuevo' : 'Imprimir'}
+            </div>
+            <div className={`${CLASE_PANEL_TICKET_ACCIONES} shrink-0 pt-4`}>
+              {esAndroid() && (
+                <button className={CLASE_BTN_ACCENT} onClick={() => { imprimirTicketApp(ticket); setYaImprimio(true) }}>
+                  {yaImprimio ? 'Imprimir de nuevo' : 'Imprimir directo'}
                 </button>
-              </div>
+              )}
+              <button className={CLASE_BTN_PRIMARY} onClick={() => { imprimirTicket(ticket.ancho_mm); setYaImprimio(true) }}>
+                {esAndroid() ? 'Imprimir con el sistema' : (yaImprimio ? 'Imprimir de nuevo' : 'Imprimir')}
+              </button>
             </div>
           </div>
         </div>
@@ -325,7 +369,7 @@ export default function Mostrador() {
 
       <div className="grid grid-cols-[1fr_400px] gap-5 items-start mb-6 max-[900px]:grid-cols-1 max-[900px]:mb-0">
         <div className="min-w-0 flex flex-col gap-4">
-          <form onSubmit={alEscanear} className={`${CLASE_CARD} flex gap-[0.6rem]`}>
+          <form onSubmit={alEscanear} className={`${CLASE_CARD} flex gap-[0.6rem] max-[900px]:hidden`}>
             <div className="relative flex-1">
               <svg
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
@@ -354,23 +398,25 @@ export default function Mostrador() {
           <div className={CLASE_CARD}>
             <p className={CLASE_SECCION_TITULO}>Más vendidos</p>
             <p className={`${CLASE_AYUDA} -mt-[0.4rem] mb-[0.8rem]`}>
-              Atajos: teclas 1–9 agregan estos productos · Enter o Espacio cobra la venta
+              {esTactil
+                ? 'Listo para escanear: dispara la pistola y el producto se agrega solo · o toca una tarjeta'
+                : 'Atajos: teclas 1–9 agregan estos productos · Enter o Espacio cobra la venta'}
             </p>
             {populares.length === 0 ? (
               <div className={CLASE_EMPTY_STATE}>Todavía no hay historial de ventas.</div>
             ) : (
               <div className="relative">
-                <div className="scroll-fina snap-x snap-mandatory scroll-smooth grid items-start [grid-auto-flow:column] [grid-template-rows:repeat(2,auto)] [grid-auto-columns:clamp(130px,50vh_-_16.5rem,200px)] gap-3 overflow-x-auto pt-[0.3rem] pl-[0.2rem] pr-6 pb-3">
+                <div className="scroll-fina snap-x snap-mandatory scroll-smooth grid items-start [grid-auto-flow:column] [grid-template-rows:repeat(2,auto)] [grid-auto-columns:clamp(92px,26vw,130px)] sm:[grid-auto-columns:clamp(130px,50vh_-_16.5rem,200px)] gap-2.5 overflow-x-auto pt-[0.3rem] pl-[0.2rem] pr-6 pb-3">
                   {populares.map((p, i) => {
                     const unidad = (p.units ?? []).find((u) => u.is_default) ?? p.units?.[0]
                     return (
                       <button
                         key={p.id}
-                        className="snap-start w-[clamp(130px,50vh_-_16.5rem,200px)] relative flex flex-col gap-2 text-left p-2.5 border border-border rounded-2xl bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                        className="snap-start w-[clamp(92px,26vw,130px)] sm:w-[clamp(130px,50vh_-_16.5rem,200px)] relative flex flex-col gap-1.5 text-left p-1.5 sm:p-2.5 border border-border rounded-2xl bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
                         onPointerDown={alTocarTarjeta}
                         onClick={() => agregarProducto(p)}
                       >
-                        {i < TECLAS_ATAJO && (
+                        {i < TECLAS_ATAJO && !esTactil && (
                           <span
                             className="absolute top-1.5 left-1.5 z-10 min-w-[22px] h-[22px] px-[5px] rounded-lg bg-primary text-white text-xs font-bold flex items-center justify-center shadow-sm"
                             aria-hidden="true"
@@ -379,9 +425,9 @@ export default function Mostrador() {
                           </span>
                         )}
                         <Foto imagePath={p.image_path} alt={p.product_name} grande />
-                        <span className="flex flex-col gap-1 px-0.5 pb-0.5">
-                          <span className="text-[0.9rem] font-semibold leading-[1.25] line-clamp-2">{p.product_name}</span>
-                          <span className="text-[0.98rem] text-primary font-bold">{dinero(unidad?.price)}</span>
+                        <span className="flex flex-col gap-0.5 sm:gap-1 px-0.5 pb-0.5">
+                          <span className="text-[0.72rem] sm:text-[0.9rem] font-semibold leading-[1.2] line-clamp-2">{p.product_name}</span>
+                          <span className="text-[0.78rem] sm:text-[0.98rem] text-primary font-bold">{dinero(unidad?.price)}</span>
                         </span>
                       </button>
                     )
@@ -394,24 +440,33 @@ export default function Mostrador() {
 
           <div className={CLASE_CARD}>
             <p className={CLASE_SECCION_TITULO}>Todos los productos</p>
-            <div className="flex flex-col sm:flex-row gap-[0.6rem] mb-[0.9rem]">
+            <div className="flex flex-col gap-[0.6rem] mb-[0.9rem]">
               <input
                 type="search"
                 placeholder="Buscar por nombre o precio…"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="flex-1 min-w-0"
+                className="min-w-0"
               />
-              <select
-                value={categoriaId}
-                onChange={(e) => setCategoriaId(e.target.value)}
-                className="sm:max-w-[220px]"
-              >
-                <option value="">Todas las categorías</option>
+              <div className="flex flex-wrap gap-[0.4rem]">
+                <button
+                  type="button"
+                  onClick={() => setCategoriaId('')}
+                  className={categoriaId === '' ? CLASE_CHIP_FILTRO_ACTIVO : CLASE_CHIP_FILTRO}
+                >
+                  Todas
+                </button>
                 {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setCategoriaId(String(c.id))}
+                    className={categoriaId === String(c.id) ? CLASE_CHIP_FILTRO_ACTIVO : CLASE_CHIP_FILTRO}
+                  >
+                    {c.name}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
             {resultados.length === 0 ? (
               <div className={CLASE_EMPTY_STATE}>
@@ -511,9 +566,12 @@ export default function Mostrador() {
         resumen={{
           renglones: carrito.length,
           piezas: carrito.reduce((s, i) => s + i.quantity, 0),
-          total
+          total,
+          items: carrito
         }}
         cobrando={cobrando}
+        teclasVistas={teclasVistas}
+        escaneoEnCurso={escaneoEnCurso}
         onCancelar={cancelarCobro}
         onConfirmar={confirmarCobro}
       />
