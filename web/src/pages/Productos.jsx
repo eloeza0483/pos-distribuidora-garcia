@@ -8,7 +8,8 @@ import SelectorCategoria from '../components/SelectorCategoria.jsx'
 import {
   CLASE_CARD, CLASE_PAGE_TITLE, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE,
   CLASE_AYUDA, CLASE_BTN_PRIMARY, CLASE_BTN_GHOST, CLASE_SECCION_TITULO,
-  CLASE_PILL_LOW, CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_BTN_ACCENT
+  CLASE_PILL_LOW, CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_BTN_ACCENT,
+  CLASE_CHIP_FILTRO, CLASE_CHIP_FILTRO_ACTIVO
 } from '../lib/clasesUi.js'
 
 const productoVacio = { product_name: '', price: '', unit_label: 'pieza', barcode: '', category_id: null }
@@ -276,34 +277,45 @@ export default function Productos() {
       {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
       {aviso && <div className={`${CLASE_CARD} mb-4 border-success`}>{aviso}</div>}
 
-      <form onSubmit={alBuscar} className={`${CLASE_CARD} mb-5 flex flex-col sm:flex-row gap-[0.6rem]`}>
-        <div className="relative flex-1">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-            width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
-            <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-          <input
-            type="search"
-            placeholder="Buscar por nombre, código de barras o precio…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="!pl-9"
-          />
+      <form onSubmit={alBuscar} className={`${CLASE_CARD} mb-5 flex flex-col gap-[0.6rem]`}>
+        <div className="flex flex-col sm:flex-row gap-[0.6rem]">
+          <div className="relative flex-1">
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+              width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+              <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            <input
+              type="search"
+              placeholder="Buscar por nombre, código de barras o precio…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="!pl-9"
+            />
+          </div>
+          <button type="submit" className={CLASE_BTN_GHOST}>Buscar</button>
         </div>
-        <select
-          value={filtroCategoria}
-          onChange={(e) => alCambiarFiltroCategoria(e.target.value)}
-          className="sm:max-w-[200px]"
-        >
-          <option value="">Todas las categorías</option>
+        <div className="flex flex-wrap gap-[0.4rem]">
+          <button
+            type="button"
+            onClick={() => alCambiarFiltroCategoria('')}
+            className={filtroCategoria === '' ? CLASE_CHIP_FILTRO_ACTIVO : CLASE_CHIP_FILTRO}
+          >
+            Todas
+          </button>
           {categorias.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => alCambiarFiltroCategoria(String(c.id))}
+              className={filtroCategoria === String(c.id) ? CLASE_CHIP_FILTRO_ACTIVO : CLASE_CHIP_FILTRO}
+            >
+              {c.name}
+            </button>
           ))}
-        </select>
-        <button type="submit" className={CLASE_BTN_GHOST}>Buscar</button>
+        </div>
       </form>
 
       <details className={`${CLASE_CARD} mb-5`}>

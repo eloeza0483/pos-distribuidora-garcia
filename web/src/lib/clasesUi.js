@@ -34,6 +34,11 @@ export const CLASE_PILL_LOW = `${CLASE_PILL} bg-danger-soft text-danger`
 export const CLASE_PILL_INFO = `${CLASE_PILL} bg-primary-soft text-primary-dark`
 export const CLASE_PILL_CANCELADA = `${CLASE_PILL} bg-danger-soft text-danger`
 
+const CLASE_CHIP_FILTRO_BASE =
+  'inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+export const CLASE_CHIP_FILTRO = `${CLASE_CHIP_FILTRO_BASE} bg-surface border-border text-text-muted hover:bg-bg hover:text-text`
+export const CLASE_CHIP_FILTRO_ACTIVO = `${CLASE_CHIP_FILTRO_BASE} bg-primary border-primary text-white`
+
 export const CLASE_FOTO = 'w-11 h-11 rounded-xl object-cover bg-bg border border-border block'
 export const CLASE_FOTO_VACIA = 'w-11 h-11 rounded-xl bg-bg border border-dashed border-border flex items-center justify-center text-text-muted text-[1.1rem]'
 

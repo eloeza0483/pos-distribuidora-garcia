@@ -95,11 +95,13 @@ function BotonTema() {
 }
 
 export default function App() {
+  const [menuAbierto, setMenuAbierto] = useState(false)
+
   return (
     <BrowserRouter>
       <ProveedorConfirmacion>
         <div className="flex min-h-full flex-col">
-          <header className="flex items-center gap-4 px-4 h-14 bg-primary text-white shadow-sm">
+          <header className="relative flex items-center gap-3 px-4 h-14 bg-primary text-white shadow-sm">
             <NavLink to="/mostrador" className="flex-shrink-0 flex items-center gap-2">
               <span className="flex-shrink-0 w-9 h-7 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: '#16233f' }} aria-hidden="true">
                 <svg width="26" height="16" viewBox="0 0 62 40">
@@ -112,8 +114,49 @@ export default function App() {
                 <span className="text-[0.58rem] font-semibold tracking-wide text-white/75 -mt-0.5 hidden sm:block">venta de desechables y bolsas</span>
               </span>
             </NavLink>
-            <NavPrincipal />
-            <BotonTema />
+            <div className="hidden md:flex flex-1 min-w-0">
+              <NavPrincipal />
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <BotonTema />
+              <button
+                type="button"
+                className="md:hidden flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border border-white/35 bg-white/10 cursor-pointer transition-colors duration-150 hover:bg-white/20"
+                aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
+                aria-expanded={menuAbierto}
+                onClick={() => setMenuAbierto((v) => !v)}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  {menuAbierto
+                    ? <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    : <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+                </svg>
+              </button>
+            </div>
+            {menuAbierto && (
+              <>
+                <div
+                  className="md:hidden fixed inset-0 top-14 z-40"
+                  onClick={() => setMenuAbierto(false)}
+                  aria-hidden="true"
+                />
+                <nav className="md:hidden absolute top-full inset-x-0 bg-primary border-t border-white/15 shadow-md flex flex-col p-2 gap-1 z-50">
+                  {navItems.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMenuAbierto(false)}
+                      className={({ isActive }) =>
+                        'block px-4 py-3 rounded-lg text-white/90 no-underline font-medium transition-colors duration-150 hover:bg-white/10 hover:text-white' +
+                        (isActive ? ' bg-accent !text-accent-ink hover:bg-accent hover:!text-accent-ink' : '')
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </nav>
+              </>
+            )}
           </header>
           <main className="flex-1 p-6 max-w-[1400px] w-full mx-auto">
             <Routes>
