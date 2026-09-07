@@ -4,3 +4,13 @@ node_modules/
 .DS_Store
 dist/
 uploads/
+
+# Config/caché local de herramientas de IA, no forma parte del repo
+.claude/
+.impeccable/
+
+# Fotos de prueba sueltas, no forman parte del repo
+/A05.jpeg
+/plato-reyma
+/vaso-convermex.jpeg
+/vaso-reyma.jpeg
