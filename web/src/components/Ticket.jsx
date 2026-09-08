@@ -1,10 +1,5 @@
 import { dinero, fecha } from '../lib/formato.js'
-
-const NOMBRE_FORMA_PAGO = {
-  efectivo: 'Efectivo',
-  tarjeta: 'Tarjeta',
-  transferencia: 'Transferencia'
-}
+import { NOMBRE_FORMA_PAGO } from '../lib/formasPago.js'
 
 // Un solo componente sirve para el ticket recién cobrado y para la
 // reimpresión desde Ventas: ambos reciben el mismo payload `ticket` que arma

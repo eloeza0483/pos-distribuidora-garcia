@@ -4,17 +4,12 @@ import { mensajeDeError } from '../lib/errores.js'
 import { dinero } from '../lib/formato.js'
 import { esPunteroTactil } from '../lib/dispositivo.js'
 import { MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
+import { FORMAS_PAGO } from '../lib/formasPago.js'
 import {
   CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_ANCHO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
   CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN, CLASE_BTN_GHOST,
   CLASE_BTN_ACCENT, CLASE_BTN_PRIMARY, CLASE_FIELD, CLASE_ERROR_BANNER
 } from '../lib/clasesUi.js'
-
-const FORMAS_PAGO = [
-  { valor: 'efectivo', etiqueta: 'Efectivo', tecla: '1' },
-  { valor: 'tarjeta', etiqueta: 'Tarjeta', tecla: '2' },
-  { valor: 'transferencia', etiqueta: 'Transferencia', tecla: '3' }
-]
 
 const CLIENTE_POR_OMISION = 'Público en General'
 

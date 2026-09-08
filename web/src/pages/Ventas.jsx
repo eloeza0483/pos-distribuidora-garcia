@@ -5,17 +5,12 @@ import { useConfirmacion } from '../components/Confirmacion.jsx'
 import Ticket from '../components/Ticket.jsx'
 import { imprimirTicket } from '../lib/imprimir.js'
 import { dinero, fecha } from '../lib/formato.js'
+import { NOMBRE_FORMA_PAGO } from '../lib/formasPago.js'
 import {
   CLASE_CARD, CLASE_PAGE_TITLE, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE,
   CLASE_BTN_PRIMARY, CLASE_BTN_PELIGRO_SOLIDO, CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES,
   CLASE_PILL_INFO, CLASE_PILL_CANCELADA
 } from '../lib/clasesUi.js'
-
-const NOMBRE_FORMA_PAGO = {
-  efectivo: 'Efectivo',
-  tarjeta: 'Tarjeta',
-  transferencia: 'Transferencia'
-}
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10)

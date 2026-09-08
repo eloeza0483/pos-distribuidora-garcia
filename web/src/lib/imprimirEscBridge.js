@@ -1,16 +1,11 @@
 import { dinero, fecha } from './formato.js'
+import { NOMBRE_FORMA_PAGO } from './formasPago.js'
 
 // Debe coincidir con el applicationId y el scheme de la app Android puente
 // (impresora-termica/app/build.gradle.kts y AndroidManifest.xml). Mecanismo
 // validado end-to-end en tablet real.
 const APP_SCHEME = 'escbridge'
 const APP_PACKAGE = 'mx.distribuidoragarcia.escbridge'
-
-const NOMBRE_FORMA_PAGO = {
-  efectivo: 'Efectivo',
-  tarjeta: 'Tarjeta',
-  transferencia: 'Transferencia'
-}
 
 // Impresoras térmicas de 58mm caben ~32 caracteres por línea en fuente
 // normal; las de 80mm, ~48. No hay tamaños intermedios en uso.
