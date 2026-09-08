@@ -3,18 +3,14 @@ import { api, ApiError, urlDeImagen } from '../api/client.js'
 import { mensajeDeError } from '../lib/errores.js'
 import { useConfirmacion } from '../components/Confirmacion.jsx'
 import DialogoCobro from '../components/DialogoCobro.jsx'
-import Ticket from '../components/Ticket.jsx'
-import { imprimirTicket } from '../lib/imprimir.js'
-import { imprimirTicketApp } from '../lib/imprimirEscBridge.js'
+import ModalTicket from '../components/ModalTicket.jsx'
 import { dinero } from '../lib/formato.js'
-import { esPunteroTactil, esAndroid } from '../lib/dispositivo.js'
+import { esPunteroTactil } from '../lib/dispositivo.js'
 import { useEscaner, MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
 import {
   CLASE_PAGE_TITLE, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE, CLASE_CARD, CLASE_AYUDA,
   CLASE_SECCION_TITULO, CLASE_BTN_PRIMARY, CLASE_BTN_ACCENT, CLASE_BTN_DANGER,
   CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_FOTO_GRANDE, CLASE_FOTO_GRANDE_VACIA,
-  CLASE_PANEL_TICKET, CLASE_PANEL_TICKET_ACCIONES,
-  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_CERRAR,
   CLASE_CHIP_FILTRO, CLASE_CHIP_FILTRO_ACTIVO
 } from '../lib/clasesUi.js'
 
@@ -43,7 +39,6 @@ export default function Mostrador() {
   const [cobrando, setCobrando] = useState(false)
   const [dialogoCobroAbierto, setDialogoCobroAbierto] = useState(false)
   const [ticket, setTicket] = useState(null)
-  const [yaImprimio, setYaImprimio] = useState(false)
   const inputCodigo = useRef(null)
   const claveIdempotencia = useRef(nuevaClaveIdempotencia())
   // Recuerda si la última interacción de puntero fue con el dedo, para no
@@ -82,7 +77,6 @@ export default function Mostrador() {
 
   const agregarAlCarrito = useCallback(({ product_id, product_name, image_path, unit }) => {
     setTicket(null)
-    setYaImprimio(false)
     setCarrito((prev) => {
       const idx = prev.findIndex((i) => i.unit_id === unit.id)
       if (idx >= 0) {
@@ -334,44 +328,7 @@ export default function Mostrador() {
 
       {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
 
-      {ticket && (
-        <div className={CLASE_MODAL_FONDO} onClick={() => setTicket(null)}>
-          <div
-            className={`${CLASE_MODAL} relative max-w-[480px] max-h-[85vh] flex flex-col overflow-hidden`}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="ticket-titulo"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className={CLASE_MODAL_CERRAR}
-              aria-label="Cerrar"
-              onClick={() => setTicket(null)}
-            >
-              ×
-            </button>
-            <p id="ticket-titulo" className={`${CLASE_SECCION_TITULO} m-0 shrink-0`}>
-              Venta #{ticket.folio} {ticket.pendiente ? 'guardada' : 'cobrada'}
-            </p>
-            <div className={`${CLASE_PANEL_TICKET} flex-1 min-h-0 overflow-y-auto`}>
-              <div id="area-impresion">
-                <Ticket ticket={ticket} />
-              </div>
-            </div>
-            <div className={`${CLASE_PANEL_TICKET_ACCIONES} shrink-0 pt-4`}>
-              {esAndroid() && (
-                <button className={CLASE_BTN_ACCENT} onClick={() => { imprimirTicketApp(ticket); setYaImprimio(true) }}>
-                  {yaImprimio ? 'Imprimir de nuevo' : 'Imprimir directo'}
-                </button>
-              )}
-              <button className={CLASE_BTN_PRIMARY} onClick={() => { imprimirTicket(ticket.ancho_mm); setYaImprimio(true) }}>
-                {esAndroid() ? 'Imprimir con el sistema' : (yaImprimio ? 'Imprimir de nuevo' : 'Imprimir')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalTicket ticket={ticket} onCerrar={() => setTicket(null)} />
 
       <div className="grid grid-cols-[1fr_400px] gap-5 items-start mb-6 max-[900px]:grid-cols-1 max-[900px]:mb-0">
         <div className="min-w-0 flex flex-col gap-4">

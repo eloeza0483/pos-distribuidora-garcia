@@ -4,12 +4,14 @@ import Mostrador from './pages/Mostrador.jsx'
 import Inventario from './pages/Inventario.jsx'
 import Productos from './pages/Productos.jsx'
 import Ventas from './pages/Ventas.jsx'
+import PorCobrar from './pages/PorCobrar.jsx'
 import { ProveedorConfirmacion } from './components/Confirmacion.jsx'
 import { obtenerTemaGuardado, aplicarTema } from './lib/tema.js'
 
 const navItems = [
   { to: '/mostrador', label: 'Mostrador' },
   { to: '/ventas', label: 'Ventas' },
+  { to: '/por-cobrar', label: 'Por cobrar' },
   { to: '/inventario', label: 'Inventario' },
   { to: '/productos', label: 'Productos' }
 ]
@@ -163,6 +165,7 @@ export default function App() {
               <Route path="/" element={<Navigate to="/mostrador" replace />} />
               <Route path="/mostrador" element={<Mostrador />} />
               <Route path="/ventas" element={<Ventas />} />
+              <Route path="/por-cobrar" element={<PorCobrar />} />
               <Route path="/inventario" element={<Inventario />} />
               <Route path="/productos" element={<Productos />} />
             </Routes>
