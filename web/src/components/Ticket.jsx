@@ -15,6 +15,12 @@ export default function Ticket({ ticket }) {
       {ticket.cancelado && (
         <div className="text-center font-bold text-danger border-2 border-danger rounded-md p-1 mb-[0.6rem]">CANCELADO</div>
       )}
+      {!ticket.cancelado && ticket.abono_actual != null && (
+        <div className="text-center font-bold text-[#8a5417] border-2 border-accent rounded-md p-1 mb-[0.6rem]">RECIBO DE ABONO</div>
+      )}
+      {!ticket.cancelado && ticket.abono_actual == null && ticket.pendiente && (
+        <div className="text-center font-bold text-[#8a5417] border-2 border-accent rounded-md p-1 mb-[0.6rem]">PENDIENTE POR COBRAR</div>
+      )}
 
       <div className="text-center mb-[0.6rem]">
         <p className="my-[0.1rem] font-bold text-[0.95rem]">{ticket.negocio}</p>
@@ -53,11 +59,38 @@ export default function Ticket({ ticket }) {
         <span>{dinero(ticket.total)}</span>
       </div>
 
+      {ticket.abono_actual != null && (
+        <p className="my-[0.1rem] font-bold text-[1.05rem]">Abono de hoy: {dinero(ticket.abono_actual)}</p>
+      )}
+
       {ticket.payment_method && (
         <div>
           <p className="my-[0.1rem]">Forma de pago: {NOMBRE_FORMA_PAGO[ticket.payment_method] ?? ticket.payment_method}</p>
           {ticket.cash_received !== null && <p className="my-[0.1rem]">Recibido: {dinero(ticket.cash_received)}</p>}
           {ticket.change_given !== null && <p className="my-[0.1rem]">Cambio: {dinero(ticket.change_given)}</p>}
+        </div>
+      )}
+
+      {ticket.pagos?.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-dashed border-border">
+          <p className="my-[0.1rem] font-semibold">Pagos</p>
+          {ticket.pagos.map((pago, i) => (
+            <div key={i} className="flex justify-between my-[0.1rem]">
+              <span>{fecha(pago.created_at)} · {NOMBRE_FORMA_PAGO[pago.payment_method] ?? pago.payment_method ?? 'Sin forma de pago'}</span>
+              <span>{dinero(pago.amount)}</span>
+            </div>
+          ))}
+          <div className="flex justify-between mt-1 font-semibold">
+            <span>Abonado</span>
+            <span>{dinero(ticket.amount_paid)}</span>
+          </div>
+        </div>
+      )}
+
+      {ticket.pendiente && (
+        <div className="flex justify-between font-bold text-base border-t border-dashed border-border pt-[0.4rem] mt-[0.4rem] text-[#8a5417]">
+          <span>SALDO PENDIENTE</span>
+          <span>{dinero(ticket.saldo)}</span>
         </div>
       )}
 
