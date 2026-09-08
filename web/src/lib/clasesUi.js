@@ -33,6 +33,8 @@ export const CLASE_PILL_AJUSTE = `${CLASE_PILL} bg-accent-soft text-[#8a5417]`
 export const CLASE_PILL_LOW = `${CLASE_PILL} bg-danger-soft text-danger`
 export const CLASE_PILL_INFO = `${CLASE_PILL} bg-primary-soft text-primary-dark`
 export const CLASE_PILL_CANCELADA = `${CLASE_PILL} bg-danger-soft text-danger`
+export const CLASE_PILL_PENDIENTE = `${CLASE_PILL} bg-accent-soft text-[#8a5417]`
+export const CLASE_PILL_PARCIAL = `${CLASE_PILL} bg-accent-soft text-[#8a5417]`
 
 const CLASE_CHIP_FILTRO_BASE =
   'inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'

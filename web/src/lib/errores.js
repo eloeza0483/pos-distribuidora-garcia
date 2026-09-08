@@ -14,6 +14,10 @@ const MENSAJES_POR_CODIGO = {
   price_mismatch: 'El precio cambió antes de cobrar. Vuelve a agregar los productos.',
   cash_too_low: 'El efectivo recibido no alcanza para cubrir el total.',
   already_cancelled: 'Esta venta ya está cancelada.',
+  amount_exceeds_balance: 'El abono es mayor que el saldo pendiente de esta venta.',
+  already_paid: 'Esta venta ya está pagada por completo.',
+  sale_cancelled: 'No se puede abonar a una venta cancelada.',
+  credit_requires_client: 'Una venta pendiente necesita un cliente con nombre.',
   unsupported_type: 'La foto debe ser JPG, PNG o WEBP.',
   file_too_large: 'La foto pesa demasiado. Usa una más ligera.',
   bad_upload: 'No se pudo leer el archivo que enviaste.'

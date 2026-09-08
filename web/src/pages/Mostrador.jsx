@@ -238,7 +238,10 @@ export default function Mostrador() {
     setDialogoCobroAbierto(false)
   }
 
-  async function confirmarCobro({ payment_method, cash_received, client_id }) {
+  // `amount_paid` solo llega cuando DialogoCobro está en modo crédito (venta
+  // pendiente o con abono parcial) — de contado se reenvía indefinido y el
+  // servidor cobra el total completo, como siempre.
+  async function confirmarCobro({ payment_method, cash_received, client_id, amount_paid }) {
     setCobrando(true)
     setError(null)
     try {
@@ -252,7 +255,8 @@ export default function Mostrador() {
           })),
           payment_method,
           cash_received,
-          client_id
+          client_id,
+          amount_paid
         },
         claveIdempotencia.current
       )
@@ -347,7 +351,9 @@ export default function Mostrador() {
             >
               ×
             </button>
-            <p id="ticket-titulo" className={`${CLASE_SECCION_TITULO} m-0 shrink-0`}>Venta #{ticket.folio} cobrada</p>
+            <p id="ticket-titulo" className={`${CLASE_SECCION_TITULO} m-0 shrink-0`}>
+              Venta #{ticket.folio} {ticket.pendiente ? 'guardada' : 'cobrada'}
+            </p>
             <div className={`${CLASE_PANEL_TICKET} flex-1 min-h-0 overflow-y-auto`}>
               <div id="area-impresion">
                 <Ticket ticket={ticket} />

@@ -98,9 +98,15 @@ export const api = {
     },
     get: (id) => request(`/api/sales/${id}`),
     cancel: (id, reason) => request(`/api/sales/${id}/cancel`, { method: 'POST', body: reason ? { reason } : {} }),
-    corte: (date) => request(`/api/sales/corte${date ? `?date=${date}` : ''}`)
+    corte: (date) => request(`/api/sales/corte${date ? `?date=${date}` : ''}`),
+    registrarAbono: (id, body, idempotencyKey) =>
+      request(`/api/sales/${id}/payments`, { method: 'POST', body, headers: { 'Idempotency-Key': idempotencyKey } }),
+    pagos: (id) => request(`/api/sales/${id}/payments`)
   },
   clients: {
-    list: (q) => request(`/api/clients${q ? `?q=${encodeURIComponent(q)}` : ''}`)
+    list: (q) => request(`/api/clients${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+    create: (body) => request('/api/clients', { method: 'POST', body }),
+    patch: (id, body) => request(`/api/clients/${id}`, { method: 'PATCH', body }),
+    deudores: () => request('/api/clients/deudores')
   }
 }
