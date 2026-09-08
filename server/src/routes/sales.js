@@ -1,8 +1,10 @@
 import {
   createSale, getSale, listSales, cashCut, cancelSale,
   PriceMismatchError, MissingBaseQtyError, ProductNotFoundError, CashTooLowError,
-  SaleNotFoundError, SaleAlreadyCancelledError
+  SaleNotFoundError, SaleAlreadyCancelledError, PaymentExceedsBalanceError,
+  SaleAlreadyPaidError, SaleCancelledError, CreditRequiresClientError
 } from '../services/sales.js'
+import { registerPayment, listPayments } from '../services/payments.js'
 
 const idParams = {
   type: 'object',
@@ -34,6 +36,12 @@ export default async function salesRoutes(fastify) {
       if (err instanceof CashTooLowError) {
         return reply.code(422).send({ error: 'cash_too_low', message: err.message })
       }
+      if (err instanceof PaymentExceedsBalanceError) {
+        return reply.code(422).send({ error: 'amount_exceeds_balance', message: err.message, details: err.details })
+      }
+      if (err instanceof CreditRequiresClientError) {
+        return reply.code(422).send({ error: 'credit_requires_client', message: err.message })
+      }
       if (err instanceof PriceMismatchError) {
         return reply.code(409).send({ error: 'price_mismatch', message: err.message, details: err.details })
       }
@@ -61,7 +69,11 @@ export default async function salesRoutes(fastify) {
           from: { type: 'string', format: 'date' },
           to: { type: 'string', format: 'date' },
           payment_method: { type: 'string' },
+          // 'CON_SALDO' es el valor virtual PENDIENTE ∪ PARCIAL (sin canceladas).
+          payment_status: { type: 'string', enum: ['PAGADA', 'PARCIAL', 'PENDIENTE', 'CON_SALDO'] },
+          client_id: { type: 'integer' },
           q: { type: 'string' },
+          sort: { type: 'string', enum: ['reciente', 'antigua'] },
           limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 },
           offset: { type: 'integer', minimum: 0, default: 0 }
         }
@@ -82,7 +94,17 @@ export default async function salesRoutes(fastify) {
     schema: {
       params: idParams,
       body: { $ref: 'cancelSaleBody#' },
-      response: { 200: { type: 'object', properties: { order_id: { type: 'integer' }, status: { type: 'string' }, ticket: { $ref: 'ticket#' } } } }
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            order_id: { type: 'integer' },
+            status: { type: 'string' },
+            devuelto: { type: 'number' },
+            ticket: { $ref: 'ticket#' }
+          }
+        }
+      }
     }
   }, async (req, reply) => {
     try {
@@ -96,5 +118,50 @@ export default async function salesRoutes(fastify) {
       }
       throw err
     }
+  })
+
+  fastify.post('/:id/payments', {
+    schema: {
+      params: idParams,
+      headers: { $ref: 'createPaymentHeaders#' },
+      body: { $ref: 'createPaymentBody#' },
+      response: { 201: { $ref: 'paymentResult#' } }
+    }
+  }, async (req, reply) => {
+    const idempotencyKey = req.headers['idempotency-key']
+    try {
+      const result = await registerPayment(fastify, req.params.id, { ...req.body, idempotencyKey })
+      reply.code(result.replay ? 200 : 201)
+      const { replay, ...body } = result
+      return body
+    } catch (err) {
+      if (err instanceof SaleNotFoundError) {
+        return reply.code(404).send({ error: 'not_found', message: err.message })
+      }
+      if (err instanceof SaleCancelledError) {
+        return reply.code(409).send({ error: 'sale_cancelled', message: err.message })
+      }
+      if (err instanceof SaleAlreadyPaidError) {
+        return reply.code(409).send({ error: 'already_paid', message: err.message })
+      }
+      if (err instanceof PaymentExceedsBalanceError) {
+        return reply.code(422).send({ error: 'amount_exceeds_balance', message: err.message, details: err.details })
+      }
+      if (err instanceof CashTooLowError) {
+        return reply.code(422).send({ error: 'cash_too_low', message: err.message })
+      }
+      throw err
+    }
+  })
+
+  fastify.get('/:id/payments', {
+    schema: {
+      params: idParams,
+      response: { 200: { type: 'array', items: { $ref: 'payment#' } } }
+    }
+  }, async (req, reply) => {
+    const sale = await getSale(fastify, req.params.id)
+    if (!sale) return reply.code(404).send({ error: 'not_found', message: 'La venta no existe.' })
+    return listPayments(fastify.pg, req.params.id)
   })
 }

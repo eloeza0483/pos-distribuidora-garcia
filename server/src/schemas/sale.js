@@ -23,7 +23,10 @@ export const createSaleBodySchema = {
     items: { type: 'array', minItems: 1, items: { $ref: 'saleItemInput#' } },
     client_id: { type: 'integer' },
     payment_method: { type: 'string', enum: ['efectivo', 'tarjeta', 'transferencia'] },
-    cash_received: { type: 'number', minimum: 0 }
+    cash_received: { type: 'number', minimum: 0 },
+    // Ausente = se cobra el total (de contado, como siempre). 0 = venta
+    // pendiente completa. Entre 0 y el total = abono inicial parcial.
+    amount_paid: { type: 'number', minimum: 0 }
   }
 }
 
@@ -48,6 +51,16 @@ export const ticketItemSchema = {
   }
 }
 
+export const ticketPaymentSchema = {
+  $id: 'ticketPayment',
+  type: 'object',
+  properties: {
+    amount: { type: 'number' },
+    payment_method: { type: ['string', 'null'] },
+    created_at: { type: 'string' }
+  }
+}
+
 export const ticketSchema = {
   $id: 'ticket',
   type: 'object',
@@ -67,7 +80,13 @@ export const ticketSchema = {
     payment_method: { type: ['string', 'null'] },
     cash_received: { type: ['number', 'null'] },
     change_given: { type: ['number', 'null'] },
-    cancelado: { type: 'boolean' }
+    cancelado: { type: 'boolean' },
+    payment_status: { type: 'string' },
+    amount_paid: { type: 'number' },
+    saldo: { type: 'number' },
+    pendiente: { type: 'boolean' },
+    pagos: { type: 'array', items: { $ref: 'ticketPayment#' } },
+    abono_actual: { type: ['number', 'null'] }
   }
 }
 
@@ -78,6 +97,9 @@ export const saleResultSchema = {
     order_id: { type: 'integer' },
     order_hash: { type: 'string' },
     total_amount: { type: 'number' },
+    payment_status: { type: 'string' },
+    amount_paid: { type: 'number' },
+    saldo: { type: 'number' },
     created_at: { type: 'string' },
     ticket: { $ref: 'ticket#' }
   }
@@ -94,7 +116,24 @@ export const saleListItemSchema = {
     payment_method: { type: ['string', 'null'] },
     total_amount: { type: 'number' },
     item_count: { type: 'integer' },
-    cancelled_at: { type: ['string', 'null'] }
+    cancelled_at: { type: ['string', 'null'] },
+    payment_status: { type: 'string' },
+    amount_paid: { type: 'number' },
+    saldo: { type: 'number' }
+  }
+}
+
+export const saleDetailPaymentSchema = {
+  $id: 'saleDetailPayment',
+  type: 'object',
+  properties: {
+    id: { type: 'integer' },
+    amount: { type: 'number' },
+    payment_method: { type: ['string', 'null'] },
+    cash_received: { type: ['number', 'null'] },
+    change_given: { type: ['number', 'null'] },
+    note: { type: ['string', 'null'] },
+    created_at: { type: 'string' }
   }
 }
 
@@ -107,12 +146,16 @@ export const saleDetailSchema = {
     client_id: { type: ['integer', 'null'] },
     total_amount: { type: 'number' },
     status: { type: 'string' },
+    payment_status: { type: 'string' },
+    amount_paid: { type: 'number' },
+    saldo: { type: 'number' },
     payment_method: { type: ['string', 'null'] },
     cash_received: { type: ['number', 'null'] },
     change_given: { type: ['number', 'null'] },
     created_at: { type: 'string' },
     cancelled_at: { type: ['string', 'null'] },
     cancel_reason: { type: ['string', 'null'] },
+    pagos: { type: 'array', items: { $ref: 'saleDetailPayment#' } },
     ticket: { $ref: 'ticket#' }
   }
 }
@@ -133,7 +176,15 @@ export const cashCutSchema = {
   properties: {
     date: { type: 'string' },
     tickets: { type: 'integer' },
+    vendido: { type: 'number' },
+    cobrado: { type: 'number' },
     total: { type: 'number' },
+    devuelto: { type: 'number' },
+    pendiente_generado: { type: 'number' },
+    abonos_de_otros_dias: { type: 'number' },
+    por_cobrar_total: { type: 'number' },
+    ventas_con_saldo: { type: 'integer' },
+    clientes_con_saldo: { type: 'integer' },
     por_forma_de_pago: { type: 'array', items: { $ref: 'cashCutPaymentMethod#' } },
     cancelados: { type: 'integer' }
   }

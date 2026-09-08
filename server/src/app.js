@@ -11,11 +11,15 @@ import {
 import { movementSchema, createMovementBodySchema } from './schemas/movement.js'
 import {
   saleItemInputSchema, createSaleBodySchema, createSaleHeadersSchema, saleResultSchema,
-  ticketItemSchema, ticketSchema, saleListItemSchema, saleDetailSchema,
+  ticketItemSchema, ticketPaymentSchema, ticketSchema, saleListItemSchema,
+  saleDetailPaymentSchema, saleDetailSchema,
   cashCutPaymentMethodSchema, cashCutSchema, cancelSaleBodySchema
 } from './schemas/sale.js'
+import {
+  createPaymentBodySchema, createPaymentHeadersSchema, paymentSchema, paymentResultSchema
+} from './schemas/payment.js'
 import { categorySchema, createCategoryBodySchema } from './schemas/category.js'
-import { clientSchema } from './schemas/client.js'
+import { clientSchema, createClientBodySchema, patchClientBodySchema, debtorSchema } from './schemas/client.js'
 
 import productsRoutes from './routes/products.js'
 import scanRoutes from './routes/scan.js'
@@ -35,9 +39,12 @@ export async function buildApp(opts = {}) {
     createUnitBodySchema, patchUnitBodySchema,
     movementSchema, createMovementBodySchema,
     saleItemInputSchema, createSaleBodySchema, createSaleHeadersSchema, saleResultSchema,
-    ticketItemSchema, ticketSchema, saleListItemSchema, saleDetailSchema,
+    ticketItemSchema, ticketPaymentSchema, ticketSchema, saleListItemSchema,
+    saleDetailPaymentSchema, saleDetailSchema,
     cashCutPaymentMethodSchema, cashCutSchema, cancelSaleBodySchema,
-    categorySchema, createCategoryBodySchema, clientSchema
+    createPaymentBodySchema, createPaymentHeadersSchema, paymentSchema, paymentResultSchema,
+    categorySchema, createCategoryBodySchema,
+    clientSchema, createClientBodySchema, patchClientBodySchema, debtorSchema
   ]) {
     fastify.addSchema(schema)
   }
