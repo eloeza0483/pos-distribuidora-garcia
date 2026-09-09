@@ -44,6 +44,9 @@ export const CLASE_CHIP_FILTRO_ACTIVO = `${CLASE_CHIP_FILTRO_BASE} bg-primary bo
 export const CLASE_FOTO = 'w-11 h-11 rounded-xl object-cover bg-bg border border-border block'
 export const CLASE_FOTO_VACIA = 'w-11 h-11 rounded-xl bg-bg border border-dashed border-border flex items-center justify-center text-text-muted text-[1.1rem]'
 
+export const CLASE_FOTO_CHICA = 'w-9 h-9 rounded-lg object-cover bg-bg border border-border block flex-none'
+export const CLASE_FOTO_CHICA_VACIA = 'w-9 h-9 rounded-lg bg-bg border border-dashed border-border flex items-center justify-center text-text-muted text-[0.9rem] flex-none'
+
 export const CLASE_FOTO_GRANDE = 'w-full aspect-square rounded-xl object-cover bg-bg border border-border block'
 export const CLASE_FOTO_GRANDE_VACIA = 'w-full aspect-square rounded-xl bg-bg border border-dashed border-border flex items-center justify-center text-text-muted text-[1.8rem]'
 
