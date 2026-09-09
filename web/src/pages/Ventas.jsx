@@ -16,8 +16,12 @@ import {
   CLASE_CHIP_FILTRO, CLASE_CHIP_FILTRO_ACTIVO
 } from '../lib/clasesUi.js'
 
+// Fecha de HOY en hora local, no en UTC: el backend guarda las ventas con la
+// hora local del negocio, así que con toISOString() los filtros y el corte se
+// adelantaban un día a partir de las 6 de la tarde.
 function hoyISO() {
-  return new Date().toISOString().slice(0, 10)
+  const ahora = new Date()
+  return new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
 }
 
 function diasDesde(fechaIso) {

@@ -319,8 +319,18 @@ export async function listSales(fastify, { from, to, payment_method, payment_sta
   }))
 }
 
+// El día del corte en hora LOCAL, no en UTC. `orders.created_at` y
+// `order_payments.created_at` son `timestamp without time zone` con default
+// CURRENT_TIMESTAMP, o sea que guardan la hora local del negocio. Con
+// toISOString() (UTC) el corte se iba al día siguiente a partir de las 6 de la
+// tarde y devolvía todo en cero justo a la hora de cerrar.
+function hoyLocalISO() {
+  const ahora = new Date()
+  return new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+}
+
 export async function cashCut(fastify, { date } = {}) {
-  const targetDate = date ?? new Date().toISOString().slice(0, 10)
+  const targetDate = date ?? hoyLocalISO()
 
   // 1) Dinero que entró (y salió, por devoluciones) al cajón hoy, por forma
   //    de pago. Este ES el corte: incluye tanto el cobro inicial de una venta
