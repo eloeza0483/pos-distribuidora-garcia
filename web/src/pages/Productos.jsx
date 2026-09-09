@@ -15,6 +15,7 @@ import {
 const productoVacio = { product_name: '', price: '', unit_label: 'pieza', barcode: '', category_id: null }
 const unidadVacia = { unit_label: '', price: '', base_qty: '', barcode: '' }
 const SIN_CATEGORIA = 'Sin categoría'
+const PRODUCTOS_POR_PAGINA = 15
 
 export default function Productos() {
   const [productos, setProductos] = useState([])
@@ -25,6 +26,7 @@ export default function Productos() {
   const [error, setError] = useState(null)
   const [aviso, setAviso] = useState(null)
   const [expandido, setExpandido] = useState(null)
+  const [pagina, setPagina] = useState(1)
   const [nuevoProducto, setNuevoProducto] = useState(productoVacio)
   const [creando, setCreando] = useState(false)
   const [formulariosUnidad, setFormulariosUnidad] = useState({})
@@ -50,11 +52,13 @@ export default function Productos() {
 
   function alBuscar(e) {
     e.preventDefault()
+    setPagina(1)
     cargar(q, filtroCategoria)
   }
 
   function alCambiarFiltroCategoria(valor) {
     setFiltroCategoria(valor)
+    setPagina(1)
     cargar(q, valor)
   }
 
@@ -254,10 +258,21 @@ export default function Productos() {
     }
   }
 
+  const totalPaginas = Math.max(1, Math.ceil(productos.length / PRODUCTOS_POR_PAGINA))
+
+  useEffect(() => {
+    setPagina((p) => Math.min(p, totalPaginas))
+  }, [totalPaginas])
+
+  const productosPagina = useMemo(() => {
+    const inicio = (pagina - 1) * PRODUCTOS_POR_PAGINA
+    return productos.slice(inicio, inicio + PRODUCTOS_POR_PAGINA)
+  }, [productos, pagina])
+
   // Agrupa por categoría (orden alfabético) y deja "Sin categoría" al final.
   const grupos = useMemo(() => {
     const porNombre = new Map()
-    for (const p of productos) {
+    for (const p of productosPagina) {
       const clave = p.category_name ?? SIN_CATEGORIA
       if (!porNombre.has(clave)) porNombre.set(clave, [])
       porNombre.get(clave).push(p)
@@ -268,7 +283,7 @@ export default function Productos() {
       return a.localeCompare(b)
     })
     return nombres.map((nombre) => ({ nombre, productos: porNombre.get(nombre) }))
-  }, [productos])
+  }, [productosPagina])
 
   return (
     <div>
@@ -513,6 +528,30 @@ export default function Productos() {
             ))}
           </div>
         ))
+      )}
+
+      {!cargando && productos.length > 0 && totalPaginas > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-2">
+          <button
+            type="button"
+            className={CLASE_BTN_GHOST}
+            onClick={() => setPagina((p) => Math.max(1, p - 1))}
+            disabled={pagina === 1}
+          >
+            ‹ Anterior
+          </button>
+          <span className="text-[0.85rem] text-text-muted">
+            Página {pagina} de {totalPaginas} · {productos.length} productos
+          </span>
+          <button
+            type="button"
+            className={CLASE_BTN_GHOST}
+            onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+            disabled={pagina === totalPaginas}
+          >
+            Siguiente ›
+          </button>
+        </div>
       )}
     </div>
   )
