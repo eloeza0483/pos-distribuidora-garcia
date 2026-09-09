@@ -8,7 +8,7 @@ import SelectorCategoria from '../components/SelectorCategoria.jsx'
 import {
   CLASE_CARD, CLASE_PAGE_TITLE, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE,
   CLASE_AYUDA, CLASE_BTN_PRIMARY, CLASE_BTN_GHOST, CLASE_SECCION_TITULO,
-  CLASE_PILL_LOW, CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_BTN_ACCENT,
+  CLASE_PILL_LOW, CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_FOTO_CHICA, CLASE_FOTO_CHICA_VACIA, CLASE_BTN_ACCENT,
   CLASE_CHIP_FILTRO, CLASE_CHIP_FILTRO_ACTIVO
 } from '../lib/clasesUi.js'
 
@@ -399,38 +399,39 @@ export default function Productos() {
         grupos.map((grupo) => (
           <div key={grupo.nombre} className={`${CLASE_CARD} mb-4`}>
             <p className={CLASE_SECCION_TITULO}>{grupo.nombre} · {grupo.productos.length}</p>
-            {grupo.productos.map((p) => (
+            {grupo.productos.map((p) => {
+              const urlFoto = urlDeImagen(p.image_path)
+              return (
               <Fragment key={p.id}>
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 py-3 border-b border-border last:border-b-0">
-                  <ControlFoto producto={p} onSubir={subirFoto} onQuitar={quitarFoto} />
-                  <div className="flex-1 min-w-[160px]">
-                    <p className="font-semibold text-[0.92rem] leading-[1.25]">{p.product_name}</p>
-                    <p className="flex items-center gap-2 flex-wrap text-[0.85rem] text-text-muted mt-0.5">
+                <div
+                  className="flex items-center gap-3 py-2 border-b border-border last:border-b-0 cursor-pointer hover:bg-bg"
+                  onClick={() => setExpandido(expandido === p.id ? null : p.id)}
+                >
+                  {urlFoto
+                    ? <img className={CLASE_FOTO_CHICA} src={urlFoto} alt={p.product_name} />
+                    : <div className={CLASE_FOTO_CHICA_VACIA} aria-hidden="true">📦</div>}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[0.85rem] leading-[1.25] truncate">{p.product_name}</p>
+                    <p className="flex items-center gap-2 text-[0.78rem] text-text-muted mt-0.5">
                       <span className="text-primary font-bold">{dinero(p.list_price)}</span>
                       <span>· {piezas(p.stock_base)}</span>
                       {p.low_stock && <span className={CLASE_PILL_LOW}>bajo</span>}
                     </p>
                   </div>
-                  <div className="w-full sm:w-auto flex items-center gap-3">
-                    <div className="flex-1 sm:flex-none sm:w-[190px]">
-                      <SelectorCategoria
-                        categorias={categorias}
-                        value={p.category_id}
-                        onChange={(categoryId) => cambiarCategoria(p, categoryId)}
-                        onCrear={crearCategoria}
-                      />
-                    </div>
-                    <button
-                      className={`${CLASE_BTN_GHOST} flex-none`}
-                      aria-expanded={expandido === p.id}
-                      onClick={() => setExpandido(expandido === p.id ? null : p.id)}
-                    >
-                      {expandido === p.id ? 'Ocultar' : 'Presentaciones'}
-                    </button>
-                  </div>
                 </div>
                 {expandido === p.id && (
                   <div className="bg-bg rounded-xl p-4 mb-3">
+                    <div className="flex flex-wrap items-center gap-4 mb-4 pb-4 border-b border-border">
+                      <ControlFoto producto={p} onSubir={subirFoto} onQuitar={quitarFoto} />
+                      <div className="flex-1 min-w-[190px]">
+                        <SelectorCategoria
+                          categorias={categorias}
+                          value={p.category_id}
+                          onChange={(categoryId) => cambiarCategoria(p, categoryId)}
+                          onCrear={crearCategoria}
+                        />
+                      </div>
+                    </div>
                     <div className="flex flex-col gap-3 mb-3">
                       {(p.units || []).map((u) => (
                         <div key={u.id} className="flex flex-wrap items-center gap-3 pb-3 border-b border-border last:border-b-0 last:pb-0">
@@ -525,7 +526,8 @@ export default function Productos() {
                   </div>
                 )}
               </Fragment>
-            ))}
+              )
+            })}
           </div>
         ))
       )}
