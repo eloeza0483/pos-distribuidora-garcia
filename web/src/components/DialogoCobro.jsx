@@ -279,23 +279,24 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   return (
     <div className={CLASE_MODAL_FONDO} onClick={onCancelar}>
       <div
-        className={`${formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL} max-h-[calc(100vh-2rem)] overflow-y-auto scroll-fina`}
+        className={`${formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL} max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cobro-titulo"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="cobro-titulo" className={CLASE_MODAL_TITULO}>{modoCredito ? 'Dejar venta pendiente' : 'Cobrar venta'}</h2>
+        <h2 id="cobro-titulo" className={`${CLASE_MODAL_TITULO} shrink-0`}>{modoCredito ? 'Dejar venta pendiente' : 'Cobrar venta'}</h2>
 
-        {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
+        {error && <div className={`${CLASE_ERROR_BANNER} shrink-0`}>{error}</div>}
 
+        <div className="flex-1 min-h-0 overflow-y-auto scroll-fina">
         {resumen.items?.length > 0 && (
           <div className="mb-4 rounded-lg bg-bg border border-border overflow-hidden">
             <div className="flex justify-between gap-3 px-[0.9rem] py-2 border-b border-border">
               <span className="text-[0.8rem] font-semibold text-text-muted uppercase tracking-wide">Productos</span>
               <span className="text-[0.8rem] font-semibold text-text-muted">{resumen.renglones} artículo{resumen.renglones === 1 ? '' : 's'}</span>
             </div>
-            <div className="max-h-[12rem] overflow-y-auto scroll-fina">
+            <div>
               {resumen.items.map((item) => (
                 <div key={item.key} className="flex justify-between gap-3 px-[0.9rem] py-[0.4rem] text-[0.85rem] border-b border-border last:border-b-0">
                   <span className="min-w-0 truncate">
@@ -454,8 +455,9 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
             )}
           </div>
         </div>
+        </div>
 
-        <div className={CLASE_MODAL_ACCIONES}>
+        <div className={`${CLASE_MODAL_ACCIONES} shrink-0 border-t border-border pt-4`}>
           <button className={CLASE_BTN_GHOST} onClick={onCancelar}>Cancelar</button>
           <button className={CLASE_BTN_GHOST} onClick={() => cambiarModo(modoCredito ? 'pago' : 'credito')}>
             {modoCredito ? 'Cobro de contado (P)' : 'Dejar pendiente (P)'}
