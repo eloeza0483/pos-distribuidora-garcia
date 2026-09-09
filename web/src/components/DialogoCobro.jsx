@@ -141,7 +141,6 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   // Cuántas piezas de cada denominación tocó el usuario, solo para mostrar
   // "lo que llevas" — se limpia en cuanto edita el monto a mano o cambia de modo.
   const [conteo, setConteo] = useState({})
-  const [mostrarProductos, setMostrarProductos] = useState(false)
   const [clientes, setClientes] = useState([])
   const [clientId, setClientId] = useState('')
   const [error, setError] = useState(null)
@@ -164,7 +163,6 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
     setMontoAbono('')
     setBilletesTocados(false)
     setConteo({})
-    setMostrarProductos(false)
     setError(null)
     api.clients.list()
       .then((lista) => {
@@ -281,7 +279,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   return (
     <div className={CLASE_MODAL_FONDO} onClick={onCancelar}>
       <div
-        className={formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL}
+        className={`${formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL} max-h-[calc(100vh-2rem)] overflow-y-auto scroll-fina`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cobro-titulo"
@@ -291,22 +289,30 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
 
         {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
 
+        {resumen.items?.length > 0 && (
+          <div className="mb-4 rounded-lg bg-bg border border-border overflow-hidden">
+            <div className="flex justify-between gap-3 px-[0.9rem] py-2 border-b border-border">
+              <span className="text-[0.8rem] font-semibold text-text-muted uppercase tracking-wide">Productos</span>
+              <span className="text-[0.8rem] font-semibold text-text-muted">{resumen.renglones} artículo{resumen.renglones === 1 ? '' : 's'}</span>
+            </div>
+            <div className="max-h-[12rem] overflow-y-auto scroll-fina">
+              {resumen.items.map((item) => (
+                <div key={item.key} className="flex justify-between gap-3 px-[0.9rem] py-[0.4rem] text-[0.85rem] border-b border-border last:border-b-0">
+                  <span className="min-w-0 truncate">
+                    {item.product_name} <span className="text-text-muted">× {item.quantity} {item.unit_label}</span>
+                  </span>
+                  <span className="font-semibold whitespace-nowrap">{dinero(item.unit_price * item.quantity)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className={formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''}>
           <div>
             <dl className={CLASE_MODAL_DETALLES}>
               <div className={CLASE_MODAL_DETALLE}>
-                <dt className="text-text-muted">
-                  {resumen.items?.length > 0 ? (
-                    <button
-                      type="button"
-                      className="cursor-pointer bg-transparent border-none p-0 text-text-muted underline decoration-dotted underline-offset-2"
-                      onClick={() => setMostrarProductos((v) => !v)}
-                      aria-expanded={mostrarProductos}
-                    >
-                      Productos {mostrarProductos ? '▴' : '▾'}
-                    </button>
-                  ) : 'Renglones'}
-                </dt>
+                <dt className="text-text-muted">Renglones</dt>
                 <dd className="m-0 font-semibold text-right">{resumen.renglones}</dd>
               </div>
               <div className={CLASE_MODAL_DETALLE}>
@@ -330,19 +336,6 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                 </div>
               )}
             </dl>
-
-            {mostrarProductos && resumen.items?.length > 0 && (
-              <div className="-mt-3 mb-4 rounded-lg bg-bg border border-border max-h-[9.5rem] overflow-y-auto">
-                {resumen.items.map((item) => (
-                  <div key={item.key} className="flex justify-between gap-3 px-[0.6rem] py-[0.35rem] text-[0.82rem] border-b border-border last:border-b-0">
-                    <span className="min-w-0 truncate">
-                      {item.product_name} <span className="text-text-muted">× {item.quantity} {item.unit_label}</span>
-                    </span>
-                    <span className="font-semibold whitespace-nowrap">{dinero(item.unit_price * item.quantity)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {!modoCredito && cambio > 0 && !efectivoInsuficiente && (
               <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
