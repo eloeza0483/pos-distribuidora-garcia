@@ -7,7 +7,7 @@ import { MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
 import { FORMAS_PAGO } from '../lib/formasPago.js'
 import SelectorCliente from './SelectorCliente.jsx'
 import {
-  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_ANCHO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
+  CLASE_MODAL_FONDO, CLASE_MODAL_ANCHO, CLASE_MODAL_ANCHO_MEDIO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
   CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN, CLASE_BTN_GHOST,
   CLASE_BTN_ACCENT, CLASE_BTN_PRIMARY, CLASE_FIELD, CLASE_ERROR_BANNER
 } from '../lib/clasesUi.js'
@@ -279,7 +279,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   return (
     <div className={CLASE_MODAL_FONDO} onClick={onCancelar}>
       <div
-        className={`${formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL} max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden`}
+        className={`${formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL_ANCHO_MEDIO} max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cobro-titulo"
@@ -290,26 +290,28 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
         {error && <div className={`${CLASE_ERROR_BANNER} shrink-0`}>{error}</div>}
 
         <div className="flex-1 min-h-0 overflow-y-auto scroll-fina">
+        <div className="lg:grid lg:grid-cols-[220px_1fr] lg:gap-6 lg:items-start">
         {resumen.items?.length > 0 && (
-          <div className="mb-4 rounded-lg bg-bg border border-border overflow-hidden">
-            <div className="flex justify-between gap-3 px-[0.9rem] py-2 border-b border-border">
+          <div className="mb-4 lg:mb-0 flex flex-col rounded-lg bg-bg border border-border overflow-hidden lg:max-h-[320px] min-w-0">
+            <div className="shrink-0 flex justify-between gap-3 px-[0.9rem] py-2 border-b border-border">
               <span className="text-[0.8rem] font-semibold text-text-muted uppercase tracking-wide">Productos</span>
-              <span className="text-[0.8rem] font-semibold text-text-muted">{resumen.renglones} artículo{resumen.renglones === 1 ? '' : 's'}</span>
+              <span className="text-[0.8rem] font-semibold text-text-muted whitespace-nowrap">{resumen.renglones} artículo{resumen.renglones === 1 ? '' : 's'}</span>
             </div>
-            <div>
+            <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto scroll-fina">
               {resumen.items.map((item) => (
-                <div key={item.key} className="flex justify-between gap-3 px-[0.9rem] py-[0.4rem] text-[0.85rem] border-b border-border last:border-b-0">
-                  <span className="min-w-0 truncate">
-                    {item.product_name} <span className="text-text-muted">× {item.quantity} {item.unit_label}</span>
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">{dinero(item.unit_price * item.quantity)}</span>
+                <div key={item.key} className="px-[0.9rem] py-[0.4rem] text-[0.85rem] border-b border-border last:border-b-0">
+                  <p className="m-0 truncate font-medium">{item.product_name}</p>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-text-muted whitespace-nowrap">× {item.quantity} {item.unit_label}</span>
+                    <span className="font-semibold whitespace-nowrap">{dinero(item.unit_price * item.quantity)}</span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className={formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''}>
+        <div className={`${formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''} min-w-0`}>
           <div>
             <dl className={CLASE_MODAL_DETALLES}>
               <div className={CLASE_MODAL_DETALLE}>
@@ -454,6 +456,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
               </div>
             )}
           </div>
+        </div>
         </div>
         </div>
 
