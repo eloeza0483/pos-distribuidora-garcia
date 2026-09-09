@@ -292,7 +292,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
         <div className="flex-1 min-h-0 overflow-y-auto scroll-fina">
         <div className="lg:grid lg:grid-cols-[220px_1fr] lg:gap-6 lg:items-start">
         {resumen.items?.length > 0 && (
-          <div className="mb-4 lg:mb-0 flex flex-col rounded-lg bg-bg border border-border overflow-hidden lg:max-h-[320px] min-w-0">
+          <div className="mb-4 lg:mb-0 flex flex-col rounded-lg bg-bg border border-border overflow-hidden lg:max-h-[440px] min-w-0">
             <div className="shrink-0 flex justify-between gap-3 px-[0.9rem] py-2 border-b border-border">
               <span className="text-[0.8rem] font-semibold text-text-muted uppercase tracking-wide">Productos</span>
               <span className="text-[0.8rem] font-semibold text-text-muted whitespace-nowrap">{resumen.renglones} artículo{resumen.renglones === 1 ? '' : 's'}</span>
