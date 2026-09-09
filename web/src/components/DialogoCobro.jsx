@@ -4,17 +4,13 @@ import { mensajeDeError } from '../lib/errores.js'
 import { dinero } from '../lib/formato.js'
 import { esPunteroTactil } from '../lib/dispositivo.js'
 import { MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
+import { FORMAS_PAGO } from '../lib/formasPago.js'
+import SelectorCliente from './SelectorCliente.jsx'
 import {
   CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_ANCHO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
   CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN, CLASE_BTN_GHOST,
   CLASE_BTN_ACCENT, CLASE_BTN_PRIMARY, CLASE_FIELD, CLASE_ERROR_BANNER
 } from '../lib/clasesUi.js'
-
-const FORMAS_PAGO = [
-  { valor: 'efectivo', etiqueta: 'Efectivo', tecla: '1' },
-  { valor: 'tarjeta', etiqueta: 'Tarjeta', tecla: '2' },
-  { valor: 'transferencia', etiqueta: 'Transferencia', tecla: '3' }
-]
 
 const CLIENTE_POR_OMISION = 'Público en General'
 
@@ -47,6 +43,13 @@ function desglosar(monto) {
     restante -= cantidad * valor
   }
   return partes
+}
+
+function partesDeConteo(conteo) {
+  return Object.entries(conteo)
+    .filter(([, cantidad]) => cantidad > 0)
+    .map(([valor, cantidad]) => ({ valor: Number(valor), cantidad }))
+    .sort((a, b) => b.valor - a.valor)
 }
 
 function IconoDenominacion({ valor, chico = false }) {
@@ -85,20 +88,58 @@ function ChipsDenominaciones({ partes }) {
   )
 }
 
+function TecladoBilletes({ onTap }) {
+  return (
+    <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 mt-2">
+      {DENOMINACIONES.map((valor) => (
+        <button
+          key={valor}
+          type="button"
+          onClick={() => onTap(valor)}
+          aria-label={`Agregar ${BILLETES.some((b) => b.valor === valor) ? 'billete' : 'moneda'} de ${dinero(valor)}`}
+          className="group flex flex-col items-center gap-1 rounded-xl border border-border bg-surface p-1.5 cursor-pointer transition-[border-color,box-shadow,transform] duration-150 hover:border-primary hover:shadow-sm active:scale-95"
+        >
+          <IconoDenominacion valor={valor} />
+          <span className="text-[0.7rem] font-semibold text-text-muted [font-variant-numeric:tabular-nums] group-hover:text-primary">
+            {dinero(valor)}
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function LoQueLlevas({ conteo }) {
+  if (!Object.values(conteo).some((c) => c > 0)) return null
+  return (
+    <div className="mt-3">
+      <p className="m-0 mb-1 text-xs font-semibold text-text-muted uppercase tracking-wide">Lo que llevas</p>
+      <ChipsDenominaciones partes={partesDeConteo(conteo)} />
+    </div>
+  )
+}
+
 // El modal de cobro: reemplaza al useConfirmacion() genérico en el camino de
 // venta porque necesita capturar forma de pago, efectivo/cambio y cliente —
 // datos que la confirmación simple no soporta. Mismo contrato de teclado que
 // Confirmacion.jsx (Enter cobra, Escape cancela).
+//
+// `modo` gobierna si se cobra de contado (como siempre) o se deja la venta
+// pendiente/con abono parcial. En modo 'pago' el diálogo se ve y se comporta
+// exactamente como antes — el modo 'credito' solo agrega campos, nunca quita
+// ni cambia los del camino rápido de siempre.
 export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar, cobrando, teclasVistas, escaneoEnCurso }) {
+  const [modo, setModo] = useState('pago')
   const [formaPago, setFormaPago] = useState('efectivo')
   const [efectivoRecibido, setEfectivoRecibido] = useState('')
+  const [montoAbono, setMontoAbono] = useState('')
   // Mientras esto sea false, el campo muestra el total como sugerencia (pago
   // exacto) y el primer billete que se toque reinicia el conteo desde cero
   // en vez de sumarse a esa sugerencia.
   const [billetesTocados, setBilletesTocados] = useState(false)
   const atajoPendiente = useRef(null)
   // Cuántas piezas de cada denominación tocó el usuario, solo para mostrar
-  // "lo que llevas" — se limpia en cuanto edita el monto a mano.
+  // "lo que llevas" — se limpia en cuanto edita el monto a mano o cambia de modo.
   const [conteo, setConteo] = useState({})
   const [mostrarProductos, setMostrarProductos] = useState(false)
   const [clientes, setClientes] = useState([])
@@ -106,10 +147,21 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   const [error, setError] = useState(null)
   const inputEfectivo = useRef(null)
 
+  const modoCredito = modo === 'credito'
+
+  function cambiarModo(nuevoModo) {
+    setModo(nuevoModo)
+    setConteo({})
+    setBilletesTocados(false)
+    if (nuevoModo === 'pago') setMontoAbono('')
+  }
+
   useEffect(() => {
     if (!abierto) return
+    setModo('pago')
     setFormaPago('efectivo')
     setEfectivoRecibido(resumen?.total ? String(resumen.total) : '')
+    setMontoAbono('')
     setBilletesTocados(false)
     setConteo({})
     setMostrarProductos(false)
@@ -135,17 +187,39 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
     ? Math.round((Number(efectivoRecibido) - total) * 100) / 100
     : null
   const efectivoInsuficiente = formaPago === 'efectivo' && efectivoRecibido !== '' && Number(efectivoRecibido) < total
-  const puedeCobrar = formaPago !== 'efectivo' || (efectivoRecibido !== '' && !efectivoInsuficiente)
 
+  const montoAbonoNum = montoAbono === '' ? 0 : Number(montoAbono)
+  const abonoExcedeTotal = montoAbonoNum > total + 0.005
+  const clienteSeleccionado = clientes.find((c) => String(c.id) === String(clientId))
+  const clienteEsPublicoGeneral = !clienteSeleccionado || clienteSeleccionado.client_name === CLIENTE_POR_OMISION
+
+  const puedeConfirmar = modoCredito
+    ? !clienteEsPublicoGeneral && !abonoExcedeTotal
+    : (formaPago !== 'efectivo' || (efectivoRecibido !== '' && !efectivoInsuficiente))
+
+  // Alimenta el campo activo según el modo: "Con cuánto paga" en contado,
+  // "Abono inicial" en crédito — el mismo teclado de billetes sirve para
+  // ambos, cada uno construye su propio monto.
   function agregarBillete(valor) {
-    const base = billetesTocados ? Number(efectivoRecibido) || 0 : 0
-    setEfectivoRecibido(String(Math.round((base + valor) * 100) / 100))
+    const actual = modoCredito ? montoAbono : efectivoRecibido
+    const setter = modoCredito ? setMontoAbono : setEfectivoRecibido
+    const base = billetesTocados ? Number(actual) || 0 : 0
+    setter(String(Math.round((base + valor) * 100) / 100))
     setConteo((prev) => (billetesTocados ? { ...prev, [valor]: (prev[valor] || 0) + 1 } : { [valor]: 1 }))
     setBilletesTocados(true)
   }
 
   function confirmar() {
-    if (!puedeCobrar || cobrando) return
+    if (!puedeConfirmar || cobrando) return
+    if (modoCredito) {
+      onConfirmar({
+        payment_method: formaPago,
+        cash_received: montoAbonoNum > 0 && formaPago === 'efectivo' ? montoAbonoNum : undefined,
+        client_id: clientId ? Number(clientId) : undefined,
+        amount_paid: montoAbonoNum
+      })
+      return
+    }
     onConfirmar({
       payment_method: formaPago,
       cash_received: formaPago === 'efectivo' && efectivoRecibido !== '' ? Number(efectivoRecibido) : undefined,
@@ -173,6 +247,11 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
       const activo = document.activeElement
       const enCampo = activo instanceof HTMLElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activo.tagName)
       if (enCampo) return
+      if (e.key.toLowerCase() === 'p') {
+        e.preventDefault()
+        cambiarModo(modoCredito ? 'pago' : 'credito')
+        return
+      }
       const forma = FORMAS_PAGO.find((f) => f.tecla === e.key)
       if (forma) {
         e.preventDefault()
@@ -195,7 +274,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
       window.removeEventListener('keydown', alTeclear)
       clearTimeout(atajoPendiente.current)
     }
-  }, [abierto, formaPago, efectivoRecibido, clientId, cobrando, puedeCobrar, teclasVistas, escaneoEnCurso])
+  }, [abierto, modo, formaPago, efectivoRecibido, montoAbono, clientId, cobrando, puedeConfirmar, teclasVistas, escaneoEnCurso])
 
   if (!abierto) return null
 
@@ -208,7 +287,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
         aria-labelledby="cobro-titulo"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="cobro-titulo" className={CLASE_MODAL_TITULO}>Cobrar venta</h2>
+        <h2 id="cobro-titulo" className={CLASE_MODAL_TITULO}>{modoCredito ? 'Dejar venta pendiente' : 'Cobrar venta'}</h2>
 
         {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
 
@@ -238,10 +317,16 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                 <dt className="text-text-muted">Total a cobrar</dt>
                 <dd className="m-0 font-semibold text-right">{dinero(total)}</dd>
               </div>
-              {cambio !== null && !efectivoInsuficiente && (
+              {!modoCredito && cambio !== null && !efectivoInsuficiente && (
                 <div className={CLASE_MODAL_DETALLE}>
                   <dt className="text-text-muted">Cambio a dar</dt>
                   <dd className="m-0 font-semibold text-right text-success">{dinero(cambio)}</dd>
+                </div>
+              )}
+              {modoCredito && (
+                <div className={CLASE_MODAL_DETALLE}>
+                  <dt className="text-text-muted">Queda pendiente</dt>
+                  <dd className="m-0 font-semibold text-right text-[#8a5417]">{dinero(Math.max(0, total - montoAbonoNum))}</dd>
                 </div>
               )}
             </dl>
@@ -259,7 +344,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
               </div>
             )}
 
-            {cambio > 0 && !efectivoInsuficiente && (
+            {!modoCredito && cambio > 0 && !efectivoInsuficiente && (
               <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
                 <label className="font-semibold text-text">Entrega con menos billetes</label>
                 <ChipsDenominaciones partes={desglosar(cambio)} />
@@ -287,16 +372,25 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
 
             <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
               <label htmlFor="cobro-cliente" className="font-semibold text-text">Cliente</label>
-              <select id="cobro-cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>{c.client_name}</option>
-                ))}
-              </select>
+              <SelectorCliente
+                id="cobro-cliente"
+                clientes={clientes}
+                value={clientId}
+                onChange={(id) => setClientId(id != null ? String(id) : '')}
+                onCrear={async (nombre, telefono) => {
+                  const cliente = await api.clients.create({ client_name: nombre, phone: telefono || undefined })
+                  setClientes((prev) => [...prev, cliente].sort((a, b) => a.client_name.localeCompare(b.client_name)))
+                  return cliente
+                }}
+              />
+              {modoCredito && clienteEsPublicoGeneral && (
+                <p className="m-0 text-xs text-danger">Elige o crea un cliente con nombre — no se le puede fiar a "Público en General".</p>
+              )}
             </div>
           </div>
 
           <div>
-            {formaPago === 'efectivo' && (
+            {!modoCredito && formaPago === 'efectivo' && (
               <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
                 <div className="flex items-center justify-between">
                   <label htmlFor="cobro-efectivo" className="font-semibold text-text">Con cuánto paga</label>
@@ -319,36 +413,48 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                   value={efectivoRecibido}
                   onChange={(e) => { setEfectivoRecibido(e.target.value); setBilletesTocados(true); setConteo({}) }}
                 />
-                <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 mt-2">
-                  {DENOMINACIONES.map((valor) => (
-                    <button
-                      key={valor}
-                      type="button"
-                      onClick={() => agregarBillete(valor)}
-                      aria-label={`Agregar ${BILLETES.some((b) => b.valor === valor) ? 'billete' : 'moneda'} de ${dinero(valor)}`}
-                      className="group flex flex-col items-center gap-1 rounded-xl border border-border bg-surface p-1.5 cursor-pointer transition-[border-color,box-shadow,transform] duration-150 hover:border-primary hover:shadow-sm active:scale-95"
-                    >
-                      <IconoDenominacion valor={valor} />
-                      <span className="text-[0.7rem] font-semibold text-text-muted [font-variant-numeric:tabular-nums] group-hover:text-primary">
-                        {dinero(valor)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                {Object.values(conteo).some((c) => c > 0) && (
-                  <div className="mt-3">
-                    <p className="m-0 mb-1 text-xs font-semibold text-text-muted uppercase tracking-wide">Lo que llevas</p>
-                    <ChipsDenominaciones
-                      partes={Object.entries(conteo)
-                        .filter(([, cantidad]) => cantidad > 0)
-                        .map(([valor, cantidad]) => ({ valor: Number(valor), cantidad }))
-                        .sort((a, b) => b.valor - a.valor)}
-                    />
-                  </div>
-                )}
+                <TecladoBilletes onTap={agregarBillete} />
+                <LoQueLlevas conteo={conteo} />
                 {efectivoRecibido !== '' && (
                   <p className={`m-0 mt-[0.6rem] text-[1.4rem] font-bold ${efectivoInsuficiente ? 'text-danger' : 'text-success'}`}>
                     {efectivoInsuficiente ? 'Falta ' + dinero(total - Number(efectivoRecibido)) : `Cambio: ${dinero(cambio)}`}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {modoCredito && (
+              <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="cobro-abono" className="font-semibold text-text">Abono inicial</label>
+                  {montoAbono !== '' && (
+                    <button
+                      type="button"
+                      className="text-xs font-semibold text-text-muted hover:text-primary underline-offset-2 hover:underline"
+                      onClick={() => { setMontoAbono(''); setBilletesTocados(true); setConteo({}) }}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+                <input
+                  id="cobro-abono"
+                  type="number"
+                  min="0"
+                  max={total}
+                  step="any"
+                  placeholder="0 = queda pendiente completa"
+                  value={montoAbono}
+                  onChange={(e) => { setMontoAbono(e.target.value); setBilletesTocados(true); setConteo({}) }}
+                />
+                {formaPago === 'efectivo' && <TecladoBilletes onTap={agregarBillete} />}
+                <LoQueLlevas conteo={conteo} />
+                {abonoExcedeTotal && (
+                  <p className="m-0 mt-[0.6rem] text-sm font-semibold text-danger">El abono no puede ser mayor al total.</p>
+                )}
+                {!abonoExcedeTotal && montoAbonoNum > 0 && (
+                  <p className="m-0 mt-[0.6rem] text-[1.4rem] font-bold text-[#8a5417]">
+                    Saldo pendiente: {dinero(total - montoAbonoNum)}
                   </p>
                 )}
               </div>
@@ -358,8 +464,11 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
 
         <div className={CLASE_MODAL_ACCIONES}>
           <button className={CLASE_BTN_GHOST} onClick={onCancelar}>Cancelar</button>
-          <button className={CLASE_BTN_ACCENT} disabled={!puedeCobrar || cobrando} onClick={confirmar}>
-            {cobrando ? 'Cobrando…' : 'Sí, cobrar'}
+          <button className={CLASE_BTN_GHOST} onClick={() => cambiarModo(modoCredito ? 'pago' : 'credito')}>
+            {modoCredito ? 'Cobro de contado (P)' : 'Dejar pendiente (P)'}
+          </button>
+          <button className={CLASE_BTN_ACCENT} disabled={!puedeConfirmar || cobrando} onClick={confirmar}>
+            {cobrando ? (modoCredito ? 'Guardando…' : 'Cobrando…') : (modoCredito ? 'Guardar pendiente' : 'Sí, cobrar')}
           </button>
         </div>
       </div>

@@ -1,16 +1,11 @@
 import { dinero, fecha } from './formato.js'
+import { NOMBRE_FORMA_PAGO } from './formasPago.js'
 
 // Debe coincidir con el applicationId y el scheme de la app Android puente
 // (impresora-termica/app/build.gradle.kts y AndroidManifest.xml). Mecanismo
 // validado end-to-end en tablet real.
 const APP_SCHEME = 'escbridge'
 const APP_PACKAGE = 'mx.distribuidoragarcia.escbridge'
-
-const NOMBRE_FORMA_PAGO = {
-  efectivo: 'Efectivo',
-  tarjeta: 'Tarjeta',
-  transferencia: 'Transferencia'
-}
 
 // Impresoras térmicas de 58mm caben ~32 caracteres por línea en fuente
 // normal; las de 80mm, ~48. No hay tamaños intermedios en uso.
@@ -45,6 +40,14 @@ function construirTicketEscPos(ticket) {
     push(0x1b, 0x61, 0x01, 0x1b, 0x45, 0x01)
     pushText('*** CANCELADO ***\n')
     push(0x1b, 0x45, 0x00)
+  } else if (ticket.abono_actual != null) {
+    push(0x1b, 0x61, 0x01, 0x1b, 0x45, 0x01)
+    pushText('*** RECIBO DE ABONO ***\n')
+    push(0x1b, 0x45, 0x00)
+  } else if (ticket.pendiente) {
+    push(0x1b, 0x61, 0x01, 0x1b, 0x45, 0x01)
+    pushText('*** PENDIENTE POR COBRAR ***\n')
+    push(0x1b, 0x45, 0x00)
   }
 
   push(0x1b, 0x61, 0x01) // centrado
@@ -73,10 +76,33 @@ function construirTicketEscPos(ticket) {
   pushText(lineaDosColumnas('TOTAL', dinero(ticket.total), columnas) + '\n')
   push(0x1b, 0x21, 0x00)
 
+  if (ticket.abono_actual != null) {
+    push(0x1b, 0x21, 0x08) // negrita
+    pushText(lineaDosColumnas('Abono de hoy', dinero(ticket.abono_actual), columnas) + '\n')
+    push(0x1b, 0x21, 0x00)
+  }
+
   if (ticket.payment_method) {
     pushText('Forma de pago: ' + (NOMBRE_FORMA_PAGO[ticket.payment_method] ?? ticket.payment_method) + '\n')
     if (ticket.cash_received != null) pushText('Recibido: ' + dinero(ticket.cash_received) + '\n')
     if (ticket.change_given != null) pushText('Cambio: ' + dinero(ticket.change_given) + '\n')
+  }
+
+  if (ticket.pagos?.length > 0) {
+    pushText(separador)
+    pushText('Pagos\n')
+    for (const pago of ticket.pagos) {
+      const etiqueta = fecha(pago.created_at) + ' ' + (NOMBRE_FORMA_PAGO[pago.payment_method] ?? pago.payment_method ?? 'Sin forma')
+      pushText(lineaDosColumnas(etiqueta.slice(0, columnas - 10), dinero(pago.amount), columnas) + '\n')
+    }
+    pushText(lineaDosColumnas('Abonado', dinero(ticket.amount_paid), columnas) + '\n')
+  }
+
+  if (ticket.pendiente) {
+    pushText(separador)
+    push(0x1b, 0x21, 0x10) // negrita/doble alto — mismo peso visual que el TOTAL
+    pushText(lineaDosColumnas('SALDO', dinero(ticket.saldo), columnas) + '\n')
+    push(0x1b, 0x21, 0x00)
   }
 
   if (ticket.pie) {
