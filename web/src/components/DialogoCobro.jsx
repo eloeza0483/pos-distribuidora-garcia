@@ -6,6 +6,7 @@ import { esPunteroTactil } from '../lib/dispositivo.js'
 import { MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
 import { FORMAS_PAGO } from '../lib/formasPago.js'
 import SelectorClienteModal from './SelectorClienteModal.jsx'
+import { useConfirmacion } from './Confirmacion.jsx'
 import {
   CLASE_MODAL_FONDO, CLASE_MODAL_ANCHO, CLASE_MODAL_ANCHO_MEDIO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
   CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN, CLASE_BTN_GHOST,
@@ -86,15 +87,35 @@ function IconoDenominacion({ valor, chico = false }) {
   )
 }
 
-function ChipsDenominaciones({ partes }) {
+function ChipsDenominaciones({ partes, onQuitar }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {partes.map(({ valor, cantidad }) => (
-        <div key={valor} className="flex items-center gap-1.5 rounded-lg border border-border bg-bg px-2 py-1">
-          <IconoDenominacion valor={valor} chico />
-          <span className="text-xs font-semibold text-text-muted [font-variant-numeric:tabular-nums]">×{cantidad}</span>
-        </div>
-      ))}
+      {partes.map(({ valor, cantidad }) => {
+        const contenido = (
+          <>
+            <IconoDenominacion valor={valor} chico />
+            <span className="text-xs font-semibold text-text-muted [font-variant-numeric:tabular-nums]">×{cantidad}</span>
+          </>
+        )
+        if (!onQuitar) {
+          return (
+            <div key={valor} className="flex items-center gap-1.5 rounded-lg border border-border bg-bg px-2 py-1">
+              {contenido}
+            </div>
+          )
+        }
+        return (
+          <button
+            key={valor}
+            type="button"
+            onClick={() => onQuitar(valor)}
+            aria-label={`Quitar un billete de ${dinero(valor)}`}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-bg px-2 py-1 cursor-pointer transition-[border-color,box-shadow,transform] duration-150 hover:border-danger hover:shadow-sm active:scale-95"
+          >
+            {contenido}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -120,12 +141,19 @@ function TecladoBilletes({ onTap }) {
   )
 }
 
-function LoQueLlevas({ conteo }) {
+function LoQueLlevas({ conteo, onQuitar, onEliminarTodo }) {
   if (!Object.values(conteo).some((c) => c > 0)) return null
   return (
     <div className="mt-3">
       <p className="m-0 mb-1 text-xs font-semibold text-text-muted uppercase tracking-wide">Lo que llevas</p>
-      <ChipsDenominaciones partes={partesDeConteo(conteo)} />
+      <ChipsDenominaciones partes={partesDeConteo(conteo)} onQuitar={onQuitar} />
+      <button
+        type="button"
+        onClick={onEliminarTodo}
+        className="mt-1.5 text-xs font-semibold text-danger hover:underline underline-offset-2"
+      >
+        Eliminar todo
+      </button>
     </div>
   )
 }
@@ -140,6 +168,7 @@ function LoQueLlevas({ conteo }) {
 // exactamente como antes — el modo 'credito' solo agrega campos, nunca quita
 // ni cambia los del camino rápido de siempre.
 export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar, cobrando, teclasVistas, escaneoEnCurso }) {
+  const pedirConfirmacion = useConfirmacion()
   const [modo, setModo] = useState('pago')
   const [formaPago, setFormaPago] = useState('efectivo')
   const [efectivoRecibido, setEfectivoRecibido] = useState('')
@@ -220,6 +249,34 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
     setter(String(Math.round((base + valor) * 100) / 100))
     setConteo((prev) => (billetesTocados ? { ...prev, [valor]: (prev[valor] || 0) + 1 } : { [valor]: 1 }))
     setBilletesTocados(true)
+  }
+
+  // Corrige un toque de más: resta una pieza de esa denominación al tocar su
+  // chip en "Lo que llevas". No hace nada si ya no queda ninguna.
+  function quitarBillete(valor) {
+    if (!conteo[valor]) return
+    const actual = modoCredito ? montoAbono : efectivoRecibido
+    const setter = modoCredito ? setMontoAbono : setEfectivoRecibido
+    const nuevo = Math.max(0, Math.round(((Number(actual) || 0) - valor) * 100) / 100)
+    setter(String(nuevo))
+    setConteo((prev) => ({ ...prev, [valor]: prev[valor] - 1 }))
+  }
+
+  // Por si se le pasó la mano con varios billetes: pide confirmar antes de
+  // tirar todo el conteo, ya que puede representar bastantes toques.
+  async function eliminarTodosLosBilletes() {
+    const piezas = Object.values(conteo).reduce((total, cantidad) => total + cantidad, 0)
+    const ok = await pedirConfirmacion({
+      titulo: '¿Eliminar todos los billetes que agregaste?',
+      mensaje: `Se van a quitar las ${piezas} pieza(s) que llevas contadas hasta ahora.`,
+      textoConfirmar: 'Sí, eliminar todo',
+      peligroso: true
+    })
+    if (!ok) return
+    const setter = modoCredito ? setMontoAbono : setEfectivoRecibido
+    setter('')
+    setBilletesTocados(true)
+    setConteo({})
   }
 
   function confirmar() {
@@ -423,7 +480,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                   onChange={(e) => { setEfectivoRecibido(e.target.value); setBilletesTocados(true); setConteo({}) }}
                 />
                 <TecladoBilletes onTap={agregarBillete} />
-                <LoQueLlevas conteo={conteo} />
+                <LoQueLlevas conteo={conteo} onQuitar={quitarBillete} onEliminarTodo={eliminarTodosLosBilletes} />
                 {efectivoRecibido !== '' && (
                   <p className={`m-0 mt-[0.6rem] text-[1.4rem] font-bold ${efectivoInsuficiente ? 'text-danger' : 'text-success'}`}>
                     {efectivoInsuficiente ? 'Falta ' + dinero(total - Number(efectivoRecibido)) : `Cambio: ${dinero(cambio)}`}
@@ -458,7 +515,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                   onChange={(e) => { setMontoAbono(e.target.value); setBilletesTocados(true); setConteo({}) }}
                 />
                 {formaPago === 'efectivo' && <TecladoBilletes onTap={agregarBillete} />}
-                <LoQueLlevas conteo={conteo} />
+                <LoQueLlevas conteo={conteo} onQuitar={quitarBillete} onEliminarTodo={eliminarTodosLosBilletes} />
                 {abonoExcedeTotal && (
                   <p className="m-0 mt-[0.6rem] text-sm font-semibold text-danger">El abono no puede ser mayor al total.</p>
                 )}
