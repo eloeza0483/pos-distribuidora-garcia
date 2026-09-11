@@ -23,11 +23,14 @@ const BILLETES = [
   { valor: 1000, imagen: '/billetes/billete-1000.png' }
 ]
 
-// No hay fotos de monedas en el proyecto; se dibujan como fichas circulares
-// en vez de bloquear la función a que alguien consiga y recorte imágenes.
-const MONEDAS = [10, 5, 2, 1]
+const MONEDAS = [
+  { valor: 10, imagen: '/monedas/moneda-10.png' },
+  { valor: 5, imagen: '/monedas/moneda-5.png' },
+  { valor: 2, imagen: '/monedas/moneda-2.png' },
+  { valor: 1, imagen: '/monedas/moneda-1.png' }
+]
 
-const DENOMINACIONES = [...BILLETES.map((b) => b.valor), ...MONEDAS]
+const DENOMINACIONES = [...BILLETES.map((b) => b.valor), ...MONEDAS.map((m) => m.valor)]
 const DENOMINACIONES_DESC = [...DENOMINACIONES].sort((a, b) => b - a)
 
 // Desglose "menos billetes posibles" (algoritmo goloso). Válido porque el
@@ -54,13 +57,21 @@ function partesDeConteo(conteo) {
 
 function IconoDenominacion({ valor, chico = false }) {
   const billete = BILLETES.find((b) => b.valor === valor)
-  if (billete) {
+  const moneda = billete ? null : MONEDAS.find((m) => m.valor === valor)
+  // Si la foto no carga (archivo faltante) se cae a la ficha dibujada, para que
+  // el teclado nunca quede con huecos.
+  const [sinImagen, setSinImagen] = useState(false)
+
+  if ((billete || moneda) && !sinImagen) {
     return (
       <img
-        src={billete.imagen}
-        alt={`Billete de ${dinero(valor)}`}
-        className={`${chico ? 'w-9 h-[1.35rem]' : 'w-full aspect-[2.85]'} object-cover object-center rounded-sm bg-bg`}
+        src={(billete ?? moneda).imagen}
+        alt={`${billete ? 'Billete' : 'Moneda'} de ${dinero(valor)}`}
+        className={billete
+          ? `${chico ? 'w-9 h-[1.35rem]' : 'w-full aspect-[2.85]'} object-cover object-center rounded-sm bg-bg`
+          : `${chico ? 'w-6 h-6' : 'w-11 h-11'} shrink-0 object-contain`}
         draggable="false"
+        onError={() => setSinImagen(true)}
       />
     )
   }
@@ -285,7 +296,26 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
         aria-labelledby="cobro-titulo"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="cobro-titulo" className={`${CLASE_MODAL_TITULO} shrink-0`}>{modoCredito ? 'Dejar venta pendiente' : 'Cobrar venta'}</h2>
+        <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-[0.9rem]">
+          <h2 id="cobro-titulo" className={`${CLASE_MODAL_TITULO} mb-0`}>{modoCredito ? 'Dejar venta pendiente' : 'Cobrar venta'}</h2>
+          <div className="sm:w-[260px] sm:shrink-0">
+            <label htmlFor="cobro-cliente" className="sr-only">Cliente</label>
+            <SelectorCliente
+              id="cobro-cliente"
+              clientes={clientes}
+              value={clientId}
+              onChange={(id) => setClientId(id != null ? String(id) : '')}
+              onCrear={async (nombre, telefono) => {
+                const cliente = await api.clients.create({ client_name: nombre, phone: telefono || undefined })
+                setClientes((prev) => [...prev, cliente].sort((a, b) => a.client_name.localeCompare(b.client_name)))
+                return cliente
+              }}
+            />
+            {modoCredito && clienteEsPublicoGeneral && (
+              <p className="m-0 mt-1 text-xs text-danger">Elige o crea un cliente con nombre — no se le puede fiar a "Público en General".</p>
+            )}
+          </div>
+        </div>
 
         {error && <div className={`${CLASE_ERROR_BANNER} shrink-0`}>{error}</div>}
 
@@ -295,7 +325,9 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
           <div className="mb-4 lg:mb-0 flex flex-col rounded-lg bg-bg border border-border overflow-hidden lg:max-h-[440px] min-w-0">
             <div className="shrink-0 flex justify-between gap-3 px-[0.9rem] py-2 border-b border-border">
               <span className="text-[0.8rem] font-semibold text-text-muted uppercase tracking-wide">Productos</span>
-              <span className="text-[0.8rem] font-semibold text-text-muted whitespace-nowrap">{resumen.renglones} artículo{resumen.renglones === 1 ? '' : 's'}</span>
+              <span className="text-[0.8rem] font-semibold text-text-muted whitespace-nowrap">
+                {resumen.renglones} artículo{resumen.renglones === 1 ? '' : 's'} · {resumen.piezas} pza{resumen.piezas === 1 ? '' : 's'}
+              </span>
             </div>
             <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto scroll-fina">
               {resumen.items.map((item) => (
@@ -314,17 +346,9 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
         <div className={`${formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''} min-w-0`}>
           <div>
             <dl className={CLASE_MODAL_DETALLES}>
-              <div className={CLASE_MODAL_DETALLE}>
-                <dt className="text-text-muted">Renglones</dt>
-                <dd className="m-0 font-semibold text-right">{resumen.renglones}</dd>
-              </div>
-              <div className={CLASE_MODAL_DETALLE}>
-                <dt className="text-text-muted">Piezas</dt>
-                <dd className="m-0 font-semibold text-right">{resumen.piezas}</dd>
-              </div>
-              <div className={CLASE_MODAL_DETALLE}>
-                <dt className="text-text-muted">Total a cobrar</dt>
-                <dd className="m-0 font-semibold text-right">{dinero(total)}</dd>
+              <div className="py-[0.28rem]">
+                <dt className="text-[0.72rem] font-semibold text-text-muted uppercase tracking-wide">Total a cobrar</dt>
+                <dd className="m-0 text-[1.9rem] leading-tight font-bold [font-variant-numeric:tabular-nums]">{dinero(total)}</dd>
               </div>
               {!modoCredito && cambio !== null && !efectivoInsuficiente && (
                 <div className={CLASE_MODAL_DETALLE}>
@@ -366,23 +390,6 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
               </div>
             </div>
 
-            <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
-              <label htmlFor="cobro-cliente" className="font-semibold text-text">Cliente</label>
-              <SelectorCliente
-                id="cobro-cliente"
-                clientes={clientes}
-                value={clientId}
-                onChange={(id) => setClientId(id != null ? String(id) : '')}
-                onCrear={async (nombre, telefono) => {
-                  const cliente = await api.clients.create({ client_name: nombre, phone: telefono || undefined })
-                  setClientes((prev) => [...prev, cliente].sort((a, b) => a.client_name.localeCompare(b.client_name)))
-                  return cliente
-                }}
-              />
-              {modoCredito && clienteEsPublicoGeneral && (
-                <p className="m-0 text-xs text-danger">Elige o crea un cliente con nombre — no se le puede fiar a "Público en General".</p>
-              )}
-            </div>
           </div>
 
           <div>
