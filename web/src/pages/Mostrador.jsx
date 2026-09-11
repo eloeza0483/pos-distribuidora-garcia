@@ -184,20 +184,27 @@ export default function Mostrador() {
       if (!unidad) return
 
       setCarrito((prev) => {
-        const sinEste = prev.filter((i) => i.key !== item.key)
-        const yaExiste = sinEste.find((i) => i.unit_id === unidad.id)
+        const yaExiste = prev.find((i) => i.unit_id === unidad.id && i.key !== item.key)
         if (yaExiste) {
-          return sinEste.map((i) =>
-            i.unit_id === unidad.id ? { ...i, quantity: i.quantity + item.quantity } : i
-          )
+          return prev
+            .filter((i) => i.key !== item.key)
+            .map((i) =>
+              i.unit_id === unidad.id ? { ...i, quantity: i.quantity + item.quantity } : i
+            )
         }
-        return [...sinEste, {
-          ...item,
-          key: `${item.product_id}-${unidad.id}`,
-          unit_id: unidad.id,
-          unit_label: unidad.unit_label,
-          unit_price: Number(unidad.price)
-        }]
+        // Se actualiza en su lugar (map, no quitar+agregar) para que el renglón
+        // no se vaya al final de la lista al solo cambiar de presentación.
+        return prev.map((i) =>
+          i.key === item.key
+            ? {
+              ...i,
+              key: `${item.product_id}-${unidad.id}`,
+              unit_id: unidad.id,
+              unit_label: unidad.unit_label,
+              unit_price: Number(unidad.price)
+            }
+            : i
+        )
       })
     } catch (err) {
       setError(mensajeDeError(err))
