@@ -5,7 +5,7 @@ import { dinero } from '../lib/formato.js'
 import { esPunteroTactil } from '../lib/dispositivo.js'
 import { MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
 import { FORMAS_PAGO } from '../lib/formasPago.js'
-import SelectorCliente from './SelectorCliente.jsx'
+import SelectorClienteModal from './SelectorClienteModal.jsx'
 import {
   CLASE_MODAL_FONDO, CLASE_MODAL_ANCHO, CLASE_MODAL_ANCHO_MEDIO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
   CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN, CLASE_BTN_GHOST,
@@ -154,6 +154,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   const [conteo, setConteo] = useState({})
   const [clientes, setClientes] = useState([])
   const [clientId, setClientId] = useState('')
+  const [modalClienteAbierto, setModalClienteAbierto] = useState(false)
   const [error, setError] = useState(null)
   const inputEfectivo = useRef(null)
 
@@ -164,6 +165,9 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
     setConteo({})
     setBilletesTocados(false)
     if (nuevoModo === 'pago') setMontoAbono('')
+    // Al pasar a crédito sin un cliente con nombre elegido todavía, el modal
+    // de selección se abre solo — así no hay que buscar el botón aparte.
+    if (nuevoModo === 'credito' && clienteEsPublicoGeneral) setModalClienteAbierto(true)
   }
 
   useEffect(() => {
@@ -240,6 +244,10 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
     if (!abierto) return
 
     function alTeclear(e) {
+      // Mientras el selector de cliente está abierto encima, sus propios
+      // atajos (Escape para cerrarlo) mandan — este listener se hace a un
+      // lado para no cerrar también el diálogo de cobro de fondo.
+      if (modalClienteAbierto) return
       if (e.key === 'Escape') {
         e.preventDefault()
         onCancelar()
@@ -283,11 +291,12 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
       window.removeEventListener('keydown', alTeclear)
       clearTimeout(atajoPendiente.current)
     }
-  }, [abierto, modo, formaPago, efectivoRecibido, montoAbono, clientId, cobrando, puedeConfirmar, teclasVistas, escaneoEnCurso])
+  }, [abierto, modo, formaPago, efectivoRecibido, montoAbono, clientId, cobrando, puedeConfirmar, teclasVistas, escaneoEnCurso, modalClienteAbierto])
 
   if (!abierto) return null
 
   return (
+    <>
     <div className={CLASE_MODAL_FONDO} onClick={onCancelar}>
       <div
         className={`${formaPago === 'efectivo' ? `${CLASE_MODAL_ANCHO} xl:max-w-[1200px]` : CLASE_MODAL_ANCHO_MEDIO} max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden`}
@@ -299,18 +308,14 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
         <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-[0.9rem]">
           <h2 id="cobro-titulo" className={`${CLASE_MODAL_TITULO} mb-0`}>{modoCredito ? 'Dejar venta pendiente' : 'Cobrar venta'}</h2>
           <div className="sm:w-[260px] sm:shrink-0">
-            <label htmlFor="cobro-cliente" className="sr-only">Cliente</label>
-            <SelectorCliente
-              id="cobro-cliente"
-              clientes={clientes}
-              value={clientId}
-              onChange={(id) => setClientId(id != null ? String(id) : '')}
-              onCrear={async (nombre, telefono) => {
-                const cliente = await api.clients.create({ client_name: nombre, phone: telefono || undefined })
-                setClientes((prev) => [...prev, cliente].sort((a, b) => a.client_name.localeCompare(b.client_name)))
-                return cliente
-              }}
-            />
+            <button
+              type="button"
+              className={`${CLASE_BTN_GHOST} w-full text-left truncate`}
+              onClick={() => setModalClienteAbierto(true)}
+            >
+              {clienteSeleccionado?.client_name ?? CLIENTE_POR_OMISION}
+              {clienteSeleccionado?.saldo > 0 ? ` — debe ${dinero(clienteSeleccionado.saldo)}` : ''}
+            </button>
             {modoCredito && clienteEsPublicoGeneral && (
               <p className="m-0 mt-1 text-xs text-danger">Elige o crea un cliente con nombre — no se le puede fiar a "Público en General".</p>
             )}
@@ -480,5 +485,18 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
         </div>
       </div>
     </div>
+
+    <SelectorClienteModal
+      abierto={modalClienteAbierto}
+      clientes={clientes}
+      onSeleccionar={(cliente) => { setClientId(String(cliente.id)); setModalClienteAbierto(false) }}
+      onCrear={async (nombre, telefono) => {
+        const cliente = await api.clients.create({ client_name: nombre, phone: telefono || undefined })
+        setClientes((prev) => [...prev, cliente].sort((a, b) => a.client_name.localeCompare(b.client_name)))
+        return cliente
+      }}
+      onCerrar={() => setModalClienteAbierto(false)}
+    />
+    </>
   )
 }
