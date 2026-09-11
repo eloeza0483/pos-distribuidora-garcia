@@ -7,7 +7,7 @@ import { MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
 import { FORMAS_PAGO } from '../lib/formasPago.js'
 import SelectorCliente from './SelectorCliente.jsx'
 import {
-  CLASE_MODAL_FONDO, CLASE_MODAL, CLASE_MODAL_ANCHO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
+  CLASE_MODAL_FONDO, CLASE_MODAL_ANCHO, CLASE_MODAL_ANCHO_MEDIO, CLASE_MODAL_TITULO, CLASE_MODAL_DETALLES,
   CLASE_MODAL_DETALLE, CLASE_MODAL_ACCIONES, CLASE_BTN, CLASE_BTN_GHOST,
   CLASE_BTN_ACCENT, CLASE_BTN_PRIMARY, CLASE_FIELD, CLASE_ERROR_BANNER
 } from '../lib/clasesUi.js'
@@ -23,11 +23,14 @@ const BILLETES = [
   { valor: 1000, imagen: '/billetes/billete-1000.png' }
 ]
 
-// No hay fotos de monedas en el proyecto; se dibujan como fichas circulares
-// en vez de bloquear la función a que alguien consiga y recorte imágenes.
-const MONEDAS = [10, 5, 2, 1]
+const MONEDAS = [
+  { valor: 10, imagen: '/monedas/moneda-10.png' },
+  { valor: 5, imagen: '/monedas/moneda-5.png' },
+  { valor: 2, imagen: '/monedas/moneda-2.png' },
+  { valor: 1, imagen: '/monedas/moneda-1.png' }
+]
 
-const DENOMINACIONES = [...BILLETES.map((b) => b.valor), ...MONEDAS]
+const DENOMINACIONES = [...BILLETES.map((b) => b.valor), ...MONEDAS.map((m) => m.valor)]
 const DENOMINACIONES_DESC = [...DENOMINACIONES].sort((a, b) => b - a)
 
 // Desglose "menos billetes posibles" (algoritmo goloso). Válido porque el
@@ -54,13 +57,21 @@ function partesDeConteo(conteo) {
 
 function IconoDenominacion({ valor, chico = false }) {
   const billete = BILLETES.find((b) => b.valor === valor)
-  if (billete) {
+  const moneda = billete ? null : MONEDAS.find((m) => m.valor === valor)
+  // Si la foto no carga (archivo faltante) se cae a la ficha dibujada, para que
+  // el teclado nunca quede con huecos.
+  const [sinImagen, setSinImagen] = useState(false)
+
+  if ((billete || moneda) && !sinImagen) {
     return (
       <img
-        src={billete.imagen}
-        alt={`Billete de ${dinero(valor)}`}
-        className={`${chico ? 'w-9 h-[1.35rem]' : 'w-full aspect-[2.85]'} object-cover object-center rounded-sm bg-bg`}
+        src={(billete ?? moneda).imagen}
+        alt={`${billete ? 'Billete' : 'Moneda'} de ${dinero(valor)}`}
+        className={billete
+          ? `${chico ? 'w-9 h-[1.35rem]' : 'w-full aspect-[2.85]'} object-cover object-center rounded-sm bg-bg`
+          : `${chico ? 'w-6 h-6' : 'w-11 h-11'} shrink-0 object-contain`}
         draggable="false"
+        onError={() => setSinImagen(true)}
       />
     )
   }
@@ -90,7 +101,7 @@ function ChipsDenominaciones({ partes }) {
 
 function TecladoBilletes({ onTap }) {
   return (
-    <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 mt-2">
+    <div className="grid grid-cols-3 lg:grid-cols-5 gap-2.5 mt-2">
       {DENOMINACIONES.map((valor) => (
         <button
           key={valor}
@@ -141,7 +152,6 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   // Cuántas piezas de cada denominación tocó el usuario, solo para mostrar
   // "lo que llevas" — se limpia en cuanto edita el monto a mano o cambia de modo.
   const [conteo, setConteo] = useState({})
-  const [mostrarProductos, setMostrarProductos] = useState(false)
   const [clientes, setClientes] = useState([])
   const [clientId, setClientId] = useState('')
   const [error, setError] = useState(null)
@@ -164,7 +174,6 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
     setMontoAbono('')
     setBilletesTocados(false)
     setConteo({})
-    setMostrarProductos(false)
     setError(null)
     api.clients.list()
       .then((lista) => {
@@ -281,41 +290,65 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   return (
     <div className={CLASE_MODAL_FONDO} onClick={onCancelar}>
       <div
-        className={formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL}
+        className={`${formaPago === 'efectivo' ? `${CLASE_MODAL_ANCHO} xl:max-w-[1200px]` : CLASE_MODAL_ANCHO_MEDIO} max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cobro-titulo"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="cobro-titulo" className={CLASE_MODAL_TITULO}>{modoCredito ? 'Dejar venta pendiente' : 'Cobrar venta'}</h2>
+        <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-[0.9rem]">
+          <h2 id="cobro-titulo" className={`${CLASE_MODAL_TITULO} mb-0`}>{modoCredito ? 'Dejar venta pendiente' : 'Cobrar venta'}</h2>
+          <div className="sm:w-[260px] sm:shrink-0">
+            <label htmlFor="cobro-cliente" className="sr-only">Cliente</label>
+            <SelectorCliente
+              id="cobro-cliente"
+              clientes={clientes}
+              value={clientId}
+              onChange={(id) => setClientId(id != null ? String(id) : '')}
+              onCrear={async (nombre, telefono) => {
+                const cliente = await api.clients.create({ client_name: nombre, phone: telefono || undefined })
+                setClientes((prev) => [...prev, cliente].sort((a, b) => a.client_name.localeCompare(b.client_name)))
+                return cliente
+              }}
+            />
+            {modoCredito && clienteEsPublicoGeneral && (
+              <p className="m-0 mt-1 text-xs text-danger">Elige o crea un cliente con nombre — no se le puede fiar a "Público en General".</p>
+            )}
+          </div>
+        </div>
 
-        {error && <div className={CLASE_ERROR_BANNER}>{error}</div>}
+        {error && <div className={`${CLASE_ERROR_BANNER} shrink-0`}>{error}</div>}
 
-        <div className={formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''}>
+        <div className="flex-1 min-h-0 overflow-y-auto scroll-fina">
+        <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-6 lg:items-stretch lg:h-full">
+        {resumen.items?.length > 0 && (
+          <div className="mb-4 lg:mb-0 flex flex-col rounded-lg bg-bg border border-border overflow-hidden lg:h-full min-w-0">
+            <div className="shrink-0 flex justify-between gap-3 px-[0.9rem] py-2 border-b border-border">
+              <span className="text-[0.8rem] font-semibold text-text-muted uppercase tracking-wide">Productos</span>
+              <span className="text-[0.8rem] font-semibold text-text-muted whitespace-nowrap">
+                {resumen.renglones} artículo{resumen.renglones === 1 ? '' : 's'} · {resumen.piezas} pza{resumen.piezas === 1 ? '' : 's'}
+              </span>
+            </div>
+            <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto scroll-fina">
+              {resumen.items.map((item) => (
+                <div key={item.key} className="px-[0.9rem] py-[0.4rem] text-[0.85rem] border-b border-border last:border-b-0">
+                  <p className="m-0 truncate font-medium">{item.product_name}</p>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-text-muted whitespace-nowrap">× {item.quantity} {item.unit_label}</span>
+                    <span className="font-semibold whitespace-nowrap">{dinero(item.unit_price * item.quantity)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className={`${formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''} min-w-0 lg:h-full`}>
           <div>
             <dl className={CLASE_MODAL_DETALLES}>
-              <div className={CLASE_MODAL_DETALLE}>
-                <dt className="text-text-muted">
-                  {resumen.items?.length > 0 ? (
-                    <button
-                      type="button"
-                      className="cursor-pointer bg-transparent border-none p-0 text-text-muted underline decoration-dotted underline-offset-2"
-                      onClick={() => setMostrarProductos((v) => !v)}
-                      aria-expanded={mostrarProductos}
-                    >
-                      Productos {mostrarProductos ? '▴' : '▾'}
-                    </button>
-                  ) : 'Renglones'}
-                </dt>
-                <dd className="m-0 font-semibold text-right">{resumen.renglones}</dd>
-              </div>
-              <div className={CLASE_MODAL_DETALLE}>
-                <dt className="text-text-muted">Piezas</dt>
-                <dd className="m-0 font-semibold text-right">{resumen.piezas}</dd>
-              </div>
-              <div className={CLASE_MODAL_DETALLE}>
-                <dt className="text-text-muted">Total a cobrar</dt>
-                <dd className="m-0 font-semibold text-right">{dinero(total)}</dd>
+              <div className="py-[0.28rem]">
+                <dt className="text-[0.72rem] font-semibold text-text-muted uppercase tracking-wide">Total a cobrar</dt>
+                <dd className="m-0 text-[1.9rem] leading-tight font-bold [font-variant-numeric:tabular-nums]">{dinero(total)}</dd>
               </div>
               {!modoCredito && cambio !== null && !efectivoInsuficiente && (
                 <div className={CLASE_MODAL_DETALLE}>
@@ -330,19 +363,6 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                 </div>
               )}
             </dl>
-
-            {mostrarProductos && resumen.items?.length > 0 && (
-              <div className="-mt-3 mb-4 rounded-lg bg-bg border border-border max-h-[9.5rem] overflow-y-auto">
-                {resumen.items.map((item) => (
-                  <div key={item.key} className="flex justify-between gap-3 px-[0.6rem] py-[0.35rem] text-[0.82rem] border-b border-border last:border-b-0">
-                    <span className="min-w-0 truncate">
-                      {item.product_name} <span className="text-text-muted">× {item.quantity} {item.unit_label}</span>
-                    </span>
-                    <span className="font-semibold whitespace-nowrap">{dinero(item.unit_price * item.quantity)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {!modoCredito && cambio > 0 && !efectivoInsuficiente && (
               <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
@@ -370,23 +390,6 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
               </div>
             </div>
 
-            <div className={`${CLASE_FIELD} mb-[0.9rem]`}>
-              <label htmlFor="cobro-cliente" className="font-semibold text-text">Cliente</label>
-              <SelectorCliente
-                id="cobro-cliente"
-                clientes={clientes}
-                value={clientId}
-                onChange={(id) => setClientId(id != null ? String(id) : '')}
-                onCrear={async (nombre, telefono) => {
-                  const cliente = await api.clients.create({ client_name: nombre, phone: telefono || undefined })
-                  setClientes((prev) => [...prev, cliente].sort((a, b) => a.client_name.localeCompare(b.client_name)))
-                  return cliente
-                }}
-              />
-              {modoCredito && clienteEsPublicoGeneral && (
-                <p className="m-0 text-xs text-danger">Elige o crea un cliente con nombre — no se le puede fiar a "Público en General".</p>
-              )}
-            </div>
           </div>
 
           <div>
@@ -407,6 +410,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                 <input
                   id="cobro-efectivo"
                   ref={inputEfectivo}
+                  className="!py-[0.7rem] !text-[1.15rem]"
                   type="number"
                   min="0"
                   step="any"
@@ -439,6 +443,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                 </div>
                 <input
                   id="cobro-abono"
+                  className="!py-[0.7rem] !text-[1.15rem]"
                   type="number"
                   min="0"
                   max={total}
@@ -461,8 +466,10 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
             )}
           </div>
         </div>
+        </div>
+        </div>
 
-        <div className={CLASE_MODAL_ACCIONES}>
+        <div className={`${CLASE_MODAL_ACCIONES} shrink-0 border-t border-border pt-4`}>
           <button className={CLASE_BTN_GHOST} onClick={onCancelar}>Cancelar</button>
           <button className={CLASE_BTN_GHOST} onClick={() => cambiarModo(modoCredito ? 'pago' : 'credito')}>
             {modoCredito ? 'Cobro de contado (P)' : 'Dejar pendiente (P)'}

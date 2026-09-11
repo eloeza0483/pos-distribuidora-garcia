@@ -7,10 +7,12 @@ import { NOMBRE_FORMA_PAGO } from '../lib/formasPago.js'
 export default function Ticket({ ticket }) {
   if (!ticket) return null
 
+  // En pantalla la nota se ve cómoda (hasta 24rem) para que los nombres no se
+  // partan en tiras; al imprimir vuelve a medir los mm del papel real.
   return (
     <div
-      className="max-w-full bg-surface border border-border rounded-lg p-4 font-mono text-[0.82rem] text-text"
-      style={{ width: `${ticket.ancho_mm}mm` }}
+      className="w-full min-w-[17rem] max-w-[24rem] print:w-[var(--ancho-ticket)] print:min-w-0 print:max-w-none bg-surface border border-border rounded-lg p-4 font-mono text-[0.82rem] text-text break-words"
+      style={{ '--ancho-ticket': `${ticket.ancho_mm}mm` }}
     >
       {ticket.cancelado && (
         <div className="text-center font-bold text-danger border-2 border-danger rounded-md p-1 mb-[0.6rem]">CANCELADO</div>
@@ -35,20 +37,20 @@ export default function Ticket({ ticket }) {
         <p className="my-[0.15rem]">Cliente: {ticket.cliente}</p>
       </div>
 
-      <table className="w-full text-[0.8rem] mb-2">
+      <table className="w-full table-fixed text-[0.8rem] mb-2">
         <thead>
           <tr>
-            <th className="p-[0.2rem_0.15rem] border-none text-left normal-case tracking-normal">Producto</th>
-            <th className="p-[0.2rem_0.15rem] border-none text-right normal-case tracking-normal">Cant.</th>
-            <th className="p-[0.2rem_0.15rem] border-none text-right normal-case tracking-normal">Importe</th>
+            <th className="!py-[0.2rem] !px-[0.15rem] !border-none text-left !normal-case !tracking-normal">Producto</th>
+            <th className="w-[3.2rem] !py-[0.2rem] !px-[0.15rem] !border-none text-right !normal-case !tracking-normal">Cant.</th>
+            <th className="w-[4.6rem] !py-[0.2rem] !px-[0.15rem] !border-none text-right !normal-case !tracking-normal">Importe</th>
           </tr>
         </thead>
         <tbody>
           {ticket.items.map((item, i) => (
             <tr key={i}>
-              <td className="p-[0.2rem_0.15rem] border-none text-left">{item.product_name}{item.unit_label ? ` (${item.unit_label})` : ''}</td>
-              <td className="p-[0.2rem_0.15rem] border-none text-right">{item.quantity}</td>
-              <td className="p-[0.2rem_0.15rem] border-none text-right">{dinero(item.subtotal)}</td>
+              <td className="!py-[0.2rem] !px-[0.15rem] !border-none text-left break-words">{item.product_name}{item.unit_label ? ` (${item.unit_label})` : ''}</td>
+              <td className="!py-[0.2rem] !px-[0.15rem] !border-none text-right whitespace-nowrap">{item.quantity}</td>
+              <td className="!py-[0.2rem] !px-[0.15rem] !border-none text-right whitespace-nowrap">{dinero(item.subtotal)}</td>
             </tr>
           ))}
         </tbody>
@@ -75,9 +77,9 @@ export default function Ticket({ ticket }) {
         <div className="mt-2 pt-2 border-t border-dashed border-border">
           <p className="my-[0.1rem] font-semibold">Pagos</p>
           {ticket.pagos.map((pago, i) => (
-            <div key={i} className="flex justify-between my-[0.1rem]">
-              <span>{fecha(pago.created_at)} · {NOMBRE_FORMA_PAGO[pago.payment_method] ?? pago.payment_method ?? 'Sin forma de pago'}</span>
-              <span>{dinero(pago.amount)}</span>
+            <div key={i} className="flex justify-between gap-2 my-[0.1rem]">
+              <span className="min-w-0 break-words">{fecha(pago.created_at)} · {NOMBRE_FORMA_PAGO[pago.payment_method] ?? pago.payment_method ?? 'Sin forma de pago'}</span>
+              <span className="whitespace-nowrap">{dinero(pago.amount)}</span>
             </div>
           ))}
           <div className="flex justify-between mt-1 font-semibold">

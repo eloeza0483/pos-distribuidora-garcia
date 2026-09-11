@@ -19,7 +19,8 @@ export const CLASE_SECCION_TITULO = 'text-xs uppercase tracking-wide text-text-m
 
 export const CLASE_MODAL_FONDO = 'fixed inset-0 bg-[rgba(15,22,40,0.45)] flex items-center justify-center p-4 z-50'
 export const CLASE_MODAL = 'bg-surface rounded-2xl shadow-md p-6 w-full max-w-[440px]'
-export const CLASE_MODAL_ANCHO = 'bg-surface rounded-2xl shadow-md p-6 w-full max-w-[440px] lg:max-w-[760px]'
+export const CLASE_MODAL_ANCHO = 'bg-surface rounded-2xl shadow-md p-6 w-full max-w-[440px] lg:max-w-[1000px]'
+export const CLASE_MODAL_ANCHO_MEDIO = 'bg-surface rounded-2xl shadow-md p-6 w-full max-w-[440px] lg:max-w-[700px]'
 export const CLASE_MODAL_TITULO = 'font-heading m-0 mb-2 text-[1.25rem] text-primary-dark'
 export const CLASE_MODAL_DETALLES = 'm-0 mb-4 bg-bg rounded-lg px-[0.9rem] py-3'
 export const CLASE_MODAL_DETALLE = 'flex justify-between gap-4 py-[0.28rem] text-[0.9rem]'

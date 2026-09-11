@@ -369,13 +369,13 @@ export default function Mostrador() {
               <div className={CLASE_EMPTY_STATE}>Todavía no hay historial de ventas.</div>
             ) : (
               <div className="relative">
-                <div className="scroll-fina snap-x snap-mandatory scroll-smooth grid items-start [grid-auto-flow:column] [grid-template-rows:repeat(2,auto)] [grid-auto-columns:clamp(92px,26vw,130px)] sm:[grid-auto-columns:clamp(130px,50vh_-_16.5rem,200px)] gap-2.5 overflow-x-auto pt-[0.3rem] pl-[0.2rem] pr-6 pb-3">
+                <div className="scroll-fina snap-x snap-mandatory scroll-smooth grid items-start [grid-auto-flow:column] [grid-template-rows:repeat(2,auto)] [grid-auto-columns:clamp(92px,26vw,130px)] sm:[grid-auto-columns:clamp(130px,50dvh_-_16.5rem,200px)] gap-2.5 overflow-x-auto pt-[0.3rem] pl-[0.2rem] pr-6 pb-3">
                   {populares.map((p, i) => {
                     const unidad = (p.units ?? []).find((u) => u.is_default) ?? p.units?.[0]
                     return (
                       <button
                         key={p.id}
-                        className="snap-start w-[clamp(92px,26vw,130px)] sm:w-[clamp(130px,50vh_-_16.5rem,200px)] relative flex flex-col gap-1.5 text-left p-1.5 sm:p-2.5 border border-border rounded-2xl bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
+                        className="snap-start w-[clamp(92px,26vw,130px)] sm:w-[clamp(130px,50dvh_-_16.5rem,200px)] relative flex flex-col gap-1.5 text-left p-1.5 sm:p-2.5 border border-border rounded-2xl bg-surface cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-sm"
                         onPointerDown={alTocarTarjeta}
                         onClick={() => agregarProducto(p)}
                       >
@@ -460,7 +460,7 @@ export default function Mostrador() {
         </div>
 
         <aside className="sticky top-4 mb-6 max-[900px]:static max-[900px]:mb-0">
-          <div className={`${CLASE_CARD} flex flex-col h-[calc(100vh-8.75rem)] max-[900px]:h-auto`}>
+          <div className={`${CLASE_CARD} flex flex-col h-[calc(100dvh-8.75rem)] max-[900px]:h-auto`}>
             <div className="flex items-center justify-between mb-[0.7rem]">
               <p className={`${CLASE_SECCION_TITULO} m-0`}>Venta actual</p>
               {carrito.length > 0 && (
