@@ -101,7 +101,7 @@ function ChipsDenominaciones({ partes }) {
 
 function TecladoBilletes({ onTap }) {
   return (
-    <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 mt-2">
+    <div className="grid grid-cols-3 lg:grid-cols-5 gap-2.5 mt-2">
       {DENOMINACIONES.map((valor) => (
         <button
           key={valor}
@@ -290,7 +290,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
   return (
     <div className={CLASE_MODAL_FONDO} onClick={onCancelar}>
       <div
-        className={`${formaPago === 'efectivo' ? CLASE_MODAL_ANCHO : CLASE_MODAL_ANCHO_MEDIO} max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden`}
+        className={`${formaPago === 'efectivo' ? `${CLASE_MODAL_ANCHO} xl:max-w-[1200px]` : CLASE_MODAL_ANCHO_MEDIO} max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cobro-titulo"
@@ -320,9 +320,9 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
         {error && <div className={`${CLASE_ERROR_BANNER} shrink-0`}>{error}</div>}
 
         <div className="flex-1 min-h-0 overflow-y-auto scroll-fina">
-        <div className="lg:grid lg:grid-cols-[220px_1fr] lg:gap-6 lg:items-start">
+        <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-6 lg:items-stretch lg:h-full">
         {resumen.items?.length > 0 && (
-          <div className="mb-4 lg:mb-0 flex flex-col rounded-lg bg-bg border border-border overflow-hidden lg:max-h-[440px] min-w-0">
+          <div className="mb-4 lg:mb-0 flex flex-col rounded-lg bg-bg border border-border overflow-hidden lg:h-full min-w-0">
             <div className="shrink-0 flex justify-between gap-3 px-[0.9rem] py-2 border-b border-border">
               <span className="text-[0.8rem] font-semibold text-text-muted uppercase tracking-wide">Productos</span>
               <span className="text-[0.8rem] font-semibold text-text-muted whitespace-nowrap">
@@ -343,7 +343,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
           </div>
         )}
 
-        <div className={`${formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''} min-w-0`}>
+        <div className={`${formaPago === 'efectivo' ? 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6 lg:items-start' : ''} min-w-0 lg:h-full`}>
           <div>
             <dl className={CLASE_MODAL_DETALLES}>
               <div className="py-[0.28rem]">
@@ -410,6 +410,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                 <input
                   id="cobro-efectivo"
                   ref={inputEfectivo}
+                  className="!py-[0.7rem] !text-[1.15rem]"
                   type="number"
                   min="0"
                   step="any"
@@ -442,6 +443,7 @@ export default function DialogoCobro({ abierto, resumen, onCancelar, onConfirmar
                 </div>
                 <input
                   id="cobro-abono"
+                  className="!py-[0.7rem] !text-[1.15rem]"
                   type="number"
                   min="0"
                   max={total}
