@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { dinero } from '../lib/formato.js'
+import { esPunteroTactil } from '../lib/dispositivo.js'
 import {
   CLASE_MODAL_FONDO, CLASE_MODAL_ANCHO_MEDIO, CLASE_MODAL_TITULO, CLASE_MODAL_CERRAR,
   CLASE_BTN_GHOST, CLASE_BTN_ACCENT, CLASE_FIELD, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE
@@ -24,6 +25,9 @@ export default function SelectorClienteModal({ abierto, clientes, onSeleccionar,
     setNombreNuevo('')
     setTelefonoNuevo('')
     setError(null)
+    // En tablet enfocar el buscador solo abriría el teclado sin que lo
+    // hayan pedido — igual que "Con cuánto paga" en DialogoCobro.
+    if (esPunteroTactil()) return
     const id = setTimeout(() => inputBusqueda.current?.focus(), 0)
     return () => clearTimeout(id)
   }, [abierto])
