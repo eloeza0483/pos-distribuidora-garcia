@@ -7,10 +7,12 @@ import { NOMBRE_FORMA_PAGO } from '../lib/formasPago.js'
 export default function Ticket({ ticket }) {
   if (!ticket) return null
 
+  // En pantalla la nota se ve cómoda (hasta 24rem) para que los nombres no se
+  // partan en tiras; al imprimir vuelve a medir los mm del papel real.
   return (
     <div
-      className="max-w-full min-w-[17rem] print:min-w-0 bg-surface border border-border rounded-lg p-4 font-mono text-[0.82rem] text-text break-words"
-      style={{ width: `${ticket.ancho_mm}mm` }}
+      className="w-full min-w-[17rem] max-w-[24rem] print:w-[var(--ancho-ticket)] print:min-w-0 print:max-w-none bg-surface border border-border rounded-lg p-4 font-mono text-[0.82rem] text-text break-words"
+      style={{ '--ancho-ticket': `${ticket.ancho_mm}mm` }}
     >
       {ticket.cancelado && (
         <div className="text-center font-bold text-danger border-2 border-danger rounded-md p-1 mb-[0.6rem]">CANCELADO</div>
