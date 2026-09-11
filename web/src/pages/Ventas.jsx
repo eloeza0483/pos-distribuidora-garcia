@@ -287,7 +287,7 @@ export default function Ventas() {
         <aside>
           {detalle ? (
             <div className={`${CLASE_CARD} ${CLASE_PANEL_TICKET}`}>
-              <div id="area-impresion">
+              <div id="area-impresion" className="max-w-full overflow-x-auto scroll-fina">
                 <Ticket ticket={detalle.ticket} />
               </div>
               <div className={CLASE_PANEL_TICKET_ACCIONES}>

@@ -32,7 +32,7 @@ export default function ModalTicket({ ticket, titulo, onCerrar }) {
         <p id="modal-ticket-titulo" className={`${CLASE_SECCION_TITULO} m-0 shrink-0`}>
           {titulo ?? (ticket.pendiente ? `Venta #${ticket.folio} guardada` : `Venta #${ticket.folio} cobrada`)}
         </p>
-        <div className={`${CLASE_PANEL_TICKET} flex-1 min-h-0 overflow-y-auto`}>
+        <div className={`${CLASE_PANEL_TICKET} flex-1 min-h-0 overflow-auto scroll-fina`}>
           <div id="area-impresion">
             <Ticket ticket={ticket} />
           </div>
