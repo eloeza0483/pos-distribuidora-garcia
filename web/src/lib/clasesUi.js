@@ -54,4 +54,4 @@ export const CLASE_FOTO_GRANDE_VACIA = 'w-full aspect-square rounded-xl bg-bg bo
 export const CLASE_FILA_TACHADA = '[&>td]:opacity-[0.55] [&>td]:line-through'
 
 export const CLASE_PANEL_TICKET = 'flex flex-col gap-4 items-center'
-export const CLASE_PANEL_TICKET_ACCIONES = 'flex gap-[0.6rem]'
+export const CLASE_PANEL_TICKET_ACCIONES = 'flex justify-center gap-[0.6rem]'
