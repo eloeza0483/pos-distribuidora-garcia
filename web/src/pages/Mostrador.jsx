@@ -9,7 +9,7 @@ import { esPunteroTactil } from '../lib/dispositivo.js'
 import { useEscaner, MS_ENTRE_TECLAS } from '../hooks/useEscaner.js'
 import {
   CLASE_PAGE_TITLE, CLASE_ERROR_BANNER, CLASE_EMPTY_STATE, CLASE_CARD, CLASE_AYUDA,
-  CLASE_SECCION_TITULO, CLASE_BTN_PRIMARY, CLASE_BTN_ACCENT, CLASE_BTN_DANGER,
+  CLASE_SECCION_TITULO, CLASE_BTN_PRIMARY, CLASE_BTN_ACCENT, CLASE_BTN_DANGER, CLASE_BTN_GHOST,
   CLASE_FOTO, CLASE_FOTO_VACIA, CLASE_FOTO_GRANDE, CLASE_FOTO_GRANDE_VACIA,
   CLASE_CHIP_FILTRO, CLASE_CHIP_FILTRO_ACTIVO
 } from '../lib/clasesUi.js'
@@ -167,12 +167,40 @@ export default function Mostrador() {
     ultimoPunteroEsTouch.current = e.pointerType === 'touch'
   }
 
-  function cambiarCantidad(key, quantity) {
+  async function cambiarCantidad(key, quantity) {
     if (quantity <= 0) {
-      setCarrito((prev) => prev.filter((i) => i.key !== key))
+      await quitarConConfirmacion(key)
       return
     }
     setCarrito((prev) => prev.map((i) => (i.key === key ? { ...i, quantity } : i)))
+  }
+
+  // Los botones −/+ mandan un delta, no un total: si se tocan rápido varias
+  // veces, el prop quantity del renglón todavía trae el valor viejo y calcular
+  // quantity ± 1 desde ahí pierde toques. El tope en 1 asegura que un renglón
+  // nunca desaparezca por esta vía sin pasar por la confirmación.
+  function ajustarCantidad(key, delta) {
+    setCarrito((prev) =>
+      prev.map((i) => (i.key === key ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i))
+    )
+  }
+
+  // Quitar un renglón por error se cobra de menos y nadie lo nota, así que
+  // tanto el botón "Quitar" como el "−" estando en 1 preguntan antes.
+  async function quitarConConfirmacion(key) {
+    const item = carrito.find((i) => i.key === key)
+    if (!item) return
+    const ok = await confirmar({
+      titulo: '¿Quitar este producto de la venta?',
+      mensaje: 'Se va a quitar el renglón completo del carrito.',
+      detalles: [
+        { etiqueta: 'Producto', valor: item.product_name },
+        { etiqueta: 'Presentación', valor: item.unit_label }
+      ],
+      textoConfirmar: 'Sí, quitar',
+      peligroso: true
+    })
+    if (ok) setCarrito((prev) => prev.filter((i) => i.key !== key))
   }
 
   // Cambiar de presentación cambia precio Y unit_id. El servidor revalida el
@@ -209,10 +237,6 @@ export default function Mostrador() {
     } catch (err) {
       setError(mensajeDeError(err))
     }
-  }
-
-  function quitar(key) {
-    setCarrito((prev) => prev.filter((i) => i.key !== key))
   }
 
   async function vaciarVenta() {
@@ -491,8 +515,9 @@ export default function Mostrador() {
                     key={item.key}
                     item={item}
                     onCantidad={cambiarCantidad}
+                    onAjustar={ajustarCantidad}
                     onUnidad={cambiarUnidad}
-                    onQuitar={quitar}
+                    onQuitar={quitarConConfirmacion}
                   />
                 ))}
               </div>
@@ -551,8 +576,9 @@ export default function Mostrador() {
 
 // Las presentaciones se cargan solo cuando el renglón está en pantalla, para no
 // pedir el producto completo en cada escaneo.
-function RenglonCarrito({ item, onCantidad, onUnidad, onQuitar }) {
+function RenglonCarrito({ item, onCantidad, onAjustar, onUnidad, onQuitar }) {
   const [unidades, setUnidades] = useState(null)
+  const [textoCantidad, setTextoCantidad] = useState(String(item.quantity))
 
   useEffect(() => {
     let vigente = true
@@ -562,6 +588,19 @@ function RenglonCarrito({ item, onCantidad, onUnidad, onQuitar }) {
     return () => { vigente = false }
   }, [item.product_id])
 
+  useEffect(() => {
+    setTextoCantidad(String(item.quantity))
+  }, [item.quantity])
+
+  function confirmarCantidadEscrita() {
+    const valor = Number(textoCantidad)
+    if (!Number.isFinite(valor) || valor <= 0) {
+      setTextoCantidad(String(item.quantity))
+      return
+    }
+    if (valor !== item.quantity) onCantidad(item.key, valor)
+  }
+
   return (
     <div className="flex gap-[0.65rem] py-[0.8rem] border-b border-border first:pt-0 last:border-b-0 last:pb-0">
       <Foto imagePath={item.image_path} alt={item.product_name} />
@@ -569,7 +608,7 @@ function RenglonCarrito({ item, onCantidad, onUnidad, onQuitar }) {
         <span className="font-semibold text-[0.92rem] leading-[1.25]">{item.product_name}</span>
         <div className="flex items-center gap-2 flex-wrap">
           {unidades === null || unidades.length <= 1 ? (
-            <span>{item.unit_label}</span>
+            <span className="flex-1 min-w-[90px] !py-[0.4rem] !px-[0.55rem] !text-[0.88rem]">{item.unit_label}</span>
           ) : (
             <select
               className="!w-auto flex-1 min-w-[90px] !py-[0.4rem] !px-[0.55rem] !text-[0.88rem]"
@@ -581,14 +620,38 @@ function RenglonCarrito({ item, onCantidad, onUnidad, onQuitar }) {
               ))}
             </select>
           )}
-          <input
-            type="number"
-            min="0"
-            step="any"
-            className="!w-[4.5rem] flex-none !py-[0.4rem] !px-[0.5rem] !text-[0.88rem] text-center"
-            value={item.quantity}
-            onChange={(e) => onCantidad(item.key, Number(e.target.value))}
-          />
+          <div className="flex items-center gap-1 flex-none">
+            <button
+              type="button"
+              className={`${CLASE_BTN_GHOST} !w-8 !h-8 !p-0 flex items-center justify-center text-base leading-none`}
+              onClick={() => (item.quantity <= 1 ? onCantidad(item.key, 0) : onAjustar(item.key, -1))}
+              aria-label="Quitar una pieza"
+            >−</button>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              className="!w-[3.5rem] !py-[0.4rem] !px-[0.3rem] !text-[0.88rem] text-center"
+              value={textoCantidad}
+              onChange={(e) => setTextoCantidad(e.target.value)}
+              onBlur={confirmarCantidadEscrita}
+              onKeyDown={(e) => {
+                // En la tablet el "listo" del teclado manda Enter: se aplica
+                // aquí mismo (no solo en onBlur) y se quita el foco para que
+                // el teclado se cierre y Enter vuelva a ser el atajo de cobro.
+                if (e.key !== 'Enter') return
+                e.preventDefault()
+                confirmarCantidadEscrita()
+                e.currentTarget.blur()
+              }}
+            />
+            <button
+              type="button"
+              className={`${CLASE_BTN_GHOST} !w-8 !h-8 !p-0 flex items-center justify-center text-base leading-none`}
+              onClick={() => onAjustar(item.key, 1)}
+              aria-label="Agregar una pieza"
+            >+</button>
+          </div>
           <span className="text-[0.82rem] text-text-muted whitespace-nowrap">{dinero(item.unit_price)} c/u</span>
         </div>
         <div className="flex items-center justify-between gap-2">
