@@ -1,0 +1,8 @@
+**/node_modules
+server/uploads
+server/.env
+server/.env.test
+web/dist
+.git
+.claude
+.impeccable

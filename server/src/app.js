@@ -3,6 +3,7 @@ import Fastify from 'fastify'
 import dbPlugin from './plugins/db.js'
 import corsPlugin from './plugins/cors.js'
 import uploadsPlugin from './plugins/uploads.js'
+import spaPlugin from './plugins/spa.js'
 
 import {
   unitSchema, productSchema, createProductBodySchema, patchProductBodySchema,
@@ -62,6 +63,8 @@ export async function buildApp(opts = {}) {
   await fastify.register(salesRoutes, { prefix: '/api/sales' })
   await fastify.register(categoriesRoutes, { prefix: '/api/categories' })
   await fastify.register(clientsRoutes, { prefix: '/api/clients' })
+
+  await fastify.register(spaPlugin)
 
   return fastify
 }
